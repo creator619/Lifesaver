@@ -788,8 +788,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
+    // Register Service Worker (only on http/https, not file://)
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').then(registration => {
                 swRegistration = registration;
