@@ -672,11 +672,85 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Notification System ---
+    let swRegistration = null;
+
+    function sendNotification(title, body, tag) {
+        if (!swRegistration || Notification.permission !== 'granted') return;
+        swRegistration.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
+    }
+
+    function checkAndNotify() {
+        if (Notification.permission !== 'granted') return;
+
+        // Check for unpaid bills due today
+        const urgentBills = dashboardData.bills.filter(b =>
+            b.type !== 'success' && (b.due.toLowerCase().includes('ma') || b.due.toLowerCase().includes('lejár'))
+        );
+        if (urgentBills.length > 0) {
+            sendNotification(
+                '💸 Lejáró számla!',
+                `Ma esedékes: ${urgentBills.map(b => b.title).join(', ')}`,
+                'bill-due'
+            );
+        }
+
+        // Check for today's appointments
+        const todayApps = dashboardData.appointments.filter(a =>
+            a.time.toLowerCase().includes('ma')
+        );
+        if (todayApps.length > 0) {
+            sendNotification(
+                '📅 Mai időpontod van!',
+                `${todayApps.map(a => `${a.title} – ${a.time}`).join(', ')}`,
+                'appointment-today'
+            );
+        }
+
+        // Check for pending tasks
+        const pending = dashboardData.tasks.items.filter(t => t.status === 'pending').length;
+        if (pending >= 3) {
+            sendNotification(
+                '✅ Feladatok várnak rád',
+                `${pending} befejezetlen feladatod van még ma.`,
+                'tasks-pending'
+            );
+        }
+    }
+
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            alert('A te böngésződ nem támogatja az értesítéseket.');
+            return;
+        }
+        if (Notification.permission === 'granted') {
+            checkAndNotify();
+            return;
+        }
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            haptic('success');
+            sendNotification('🎉 LifeAdmin értesítések bekapcsolva!', 'Mostantól emlékeztetni fogunk a fontos dolgaidra.', 'welcome');
+        }
+    }
+
+    // Bell button
+    const bellBtn = document.querySelector('.btn-icon');
+    if (bellBtn) {
+        bellBtn.addEventListener('click', () => {
+            haptic('light');
+            requestNotificationPermission();
+        });
+    }
+
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').then(registration => {
+                swRegistration = registration;
                 console.log('ServiceWorker registration successful');
+                // Run notification check on startup (after a short delay)
+                setTimeout(checkAndNotify, 3000);
             }, err => {
                 console.log('ServiceWorker registration failed: ', err);
             });
