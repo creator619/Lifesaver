@@ -213,6 +213,17 @@
                         <label>Megnevezés</label>
                         <input type="text" id="item-title" class="form-control" placeholder="pl. Kutyatáp vásárlása" required>
                     </div>
+                    <!-- Extra fields for bills only -->
+                    <div id="bill-fields" style="display: none;">
+                        <div class="form-group">
+                            <label>Összeg (Ft)</label>
+                            <input type="number" id="item-amount" class="form-control" placeholder="pl. 12450">
+                        </div>
+                        <div class="form-group">
+                            <label>Határidő</label>
+                            <input type="date" id="item-due" class="form-control">
+                        </div>
+                    </div>
                     <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">Mentés</button>
                 </form>
             </div>

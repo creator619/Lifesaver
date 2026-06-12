@@ -642,6 +642,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Show/hide bill-specific fields
+        const itemTypeSelect = document.getElementById('item-type');
+        const billFields = document.getElementById('bill-fields');
+        itemTypeSelect.addEventListener('change', () => {
+            billFields.style.display = itemTypeSelect.value === 'bill' ? 'block' : 'none';
+        });
+
         addForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const type = document.getElementById('item-type').value;
@@ -653,7 +660,21 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (type === 'appointment') {
                 dashboardData.appointments.push({ title: title, time: "Hamarosan", type: "neutral" });
             } else if (type === 'bill') {
-                dashboardData.bills.push({ title: title, amount: "-", due: "Feldolgozás alatt", type: "neutral" });
+                const rawAmount = document.getElementById('item-amount').value;
+                const rawDue = document.getElementById('item-due').value;
+                const amount = rawAmount 
+                    ? new Intl.NumberFormat('hu-HU').format(parseInt(rawAmount)) + ' Ft'
+                    : '-';
+                const dueDate = rawDue
+                    ? new Date(rawDue).toLocaleDateString('hu-HU', { month: 'long', day: 'numeric' })
+                    : 'Nincs határidő';
+                const isUrgent = rawDue && (new Date(rawDue) - new Date()) < 3 * 24 * 60 * 60 * 1000;
+                dashboardData.bills.push({ 
+                    title, 
+                    amount, 
+                    due: dueDate, 
+                    type: isUrgent ? 'alert' : 'warning' 
+                });
             }
             
             haptic('success');
