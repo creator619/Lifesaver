@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div id="task-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
                         ${dashboardData.tasks.items.map((task, index) => `
                             <label class="checkbox-label ${task.status === 'completed' ? 'completed-task' : ''}">
-                                <input type="checkbox" data-index="${index}" ${task.status === 'completed' ? 'checked' : ''}>
-                                <span>${task.title}</span>
+                                <input type="checkbox" onchange="window.toggleTask(${index})" ${task.status === 'completed' ? 'checked' : ''}>
+                                <span style="flex: 1;">${task.title}</span>
                             </label>
                         `).join('')}
                     </div>
@@ -270,6 +270,61 @@ document.addEventListener('DOMContentLoaded', () => {
         renderDocumentsView();
     };
 
+    function renderTasksView() {
+        const container = document.getElementById('tasks-content');
+        if (!container) return;
+
+        if (dashboardData.tasks.items.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Nincsenek feladatok.</div>`;
+            return;
+        }
+
+        const pendingTasks = [];
+        const completedTasks = [];
+        
+        dashboardData.tasks.items.forEach((task, index) => {
+            const taskHtml = `
+                <div class="shopping-item" style="padding: 1rem 1.25rem;">
+                    <label class="checkbox-label ${task.status === 'completed' ? 'completed-task' : ''}" style="margin: 0; cursor: pointer; width: 100%;">
+                        <input type="checkbox" onchange="window.toggleTask(${index})" ${task.status === 'completed' ? 'checked' : ''}>
+                        <span style="flex: 1;">${task.title}</span>
+                    </label>
+                    <button class="btn-danger-ghost" onclick="window.deleteTask(${index})"><i class="fa-regular fa-trash-can"></i></button>
+                </div>
+            `;
+            if (task.status === 'completed') completedTasks.push(taskHtml);
+            else pendingTasks.push(taskHtml);
+        });
+
+        let html = '';
+        if (pendingTasks.length > 0) {
+            html += `<h4 style="padding: 1.25rem 1.25rem 0.5rem 1.25rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase;">Folyamatban</h4>`;
+            html += pendingTasks.join('');
+        }
+        if (completedTasks.length > 0) {
+            html += `<h4 style="padding: 1.25rem 1.25rem 0.5rem 1.25rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase;">Kész</h4>`;
+            html += completedTasks.join('');
+        }
+
+        container.innerHTML = html;
+    }
+
+    window.toggleTask = function(index) {
+        dashboardData.tasks.items[index].status = dashboardData.tasks.items[index].status === 'completed' ? 'pending' : 'completed';
+        recalculateTasks();
+        saveData();
+        renderDashboard();
+        renderTasksView();
+    };
+
+    window.deleteTask = function(index) {
+        dashboardData.tasks.items.splice(index, 1);
+        recalculateTasks();
+        saveData();
+        renderDashboard();
+        renderTasksView();
+    };
+
     function renderShoppingView() {
         const container = document.getElementById('shopping-content');
         if (!container) return;
@@ -314,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCalendarView();
     renderBillsView();
     renderDocumentsView();
+    renderTasksView();
     renderShoppingView();
 
     // Init Drag and Drop for Dashboard
@@ -450,40 +506,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initDocsUploadZone();
 
-    // Init Tasks functionality
-    function initTasks() {
-        const taskList = document.getElementById('task-list');
-        const taskCounter = document.getElementById('task-counter');
-        const taskProgress = document.getElementById('task-progress');
-
-        if (!taskList) return;
-
-        taskList.addEventListener('change', (e) => {
-            if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
-                const index = e.target.dataset.index;
-                const isChecked = e.target.checked;
-                
-                // Update internal data
-                dashboardData.tasks.items[index].status = isChecked ? 'completed' : 'pending';
+    // Task Add form
+    const taskForm = document.getElementById('task-form');
+    if (taskForm) {
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('task-input');
+            const val = input.value.trim();
+            if (val) {
+                dashboardData.tasks.items.unshift({ title: val, status: 'pending' });
                 recalculateTasks();
                 saveData();
-                
-                // Update visual styling
-                const label = e.target.closest('.checkbox-label');
-                if (isChecked) {
-                    label.classList.add('completed-task');
-                } else {
-                    label.classList.remove('completed-task');
-                }
-                
-                // Update progress bar and counter
-                taskCounter.textContent = `${dashboardData.tasks.completed} / ${dashboardData.tasks.total} kész`;
-                taskProgress.style.width = `${(dashboardData.tasks.completed / dashboardData.tasks.total) * 100}%`;
+                renderDashboard();
+                renderTasksView();
+                input.value = '';
             }
         });
     }
-
-    initTasks();
 
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
@@ -571,8 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDashboard();
             renderCalendarView();
             renderBillsView();
+            renderTasksView();
             initUploadZone();
-            initTasks();
             
             // Close and reset
             modal.classList.remove('active');
