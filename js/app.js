@@ -676,14 +676,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let swRegistration = null;
 
     function sendNotification(title, body, tag) {
-        if (!swRegistration || Notification.permission !== 'granted') return;
-        swRegistration.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
+        if (Notification.permission !== 'granted') return;
+
+        // Try via Service Worker first (shows even when app is closed)
+        if (swRegistration && swRegistration.active) {
+            swRegistration.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
+        } else {
+            // Fallback: direct Notification API (works when app is open)
+            new Notification(title, {
+                body,
+                tag,
+                icon: 'https://ui-avatars.com/api/?name=LA&background=111827&color=fff&size=192'
+            });
+        }
     }
 
     function checkAndNotify() {
         if (Notification.permission !== 'granted') return;
 
-        // Check for unpaid bills due today
         const urgentBills = dashboardData.bills.filter(b =>
             b.type !== 'success' && (b.due.toLowerCase().includes('ma') || b.due.toLowerCase().includes('lejár'))
         );
@@ -695,7 +705,6 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        // Check for today's appointments
         const todayApps = dashboardData.appointments.filter(a =>
             a.time.toLowerCase().includes('ma')
         );
@@ -707,7 +716,6 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        // Check for pending tasks
         const pending = dashboardData.tasks.items.filter(t => t.status === 'pending').length;
         if (pending >= 3) {
             sendNotification(
@@ -720,25 +728,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function requestNotificationPermission() {
         if (!('Notification' in window)) {
-            alert('A te böngésződ nem támogatja az értesítéseket.');
+            alert('A böngésződ sajnos nem támogatja az értesítéseket.');
             return;
         }
+
+        if (Notification.permission === 'denied') {
+            alert('Az értesítések le vannak tiltva. Böngésző beállításokban engedélyezd a LifeAdmin oldalt.');
+            return;
+        }
+
         if (Notification.permission === 'granted') {
             checkAndNotify();
+            haptic('light');
             return;
         }
+
+        // Ask for permission
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             haptic('success');
-            sendNotification('🎉 LifeAdmin értesítések bekapcsolva!', 'Mostantól emlékeztetni fogunk a fontos dolgaidra.', 'welcome');
+            sendNotification(
+                '🎉 Értesítések bekapcsolva!',
+                'Mostantól emlékeztetni fogunk a fontos dolgaidra.',
+                'welcome'
+            );
         }
     }
 
     // Bell button
-    const bellBtn = document.querySelector('.btn-icon');
+    const bellBtn = document.getElementById('btn-bell');
     if (bellBtn) {
         bellBtn.addEventListener('click', () => {
-            haptic('light');
             requestNotificationPermission();
         });
     }
@@ -748,11 +768,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').then(registration => {
                 swRegistration = registration;
-                console.log('ServiceWorker registration successful');
-                // Run notification check on startup (after a short delay)
+                console.log('ServiceWorker registered');
                 setTimeout(checkAndNotify, 3000);
             }, err => {
-                console.log('ServiceWorker registration failed: ', err);
+                console.warn('ServiceWorker failed:', err);
             });
         });
     }
