@@ -44,7 +44,7 @@
         <main class="main-content">
             <header class="top-header">
                 <div class="header-title">
-                    <h1>Áttekintés</h1>
+                    <h1 id="page-title">Áttekintés</h1>
                     <p class="date-subtitle" id="current-date">Dátum betöltése...</p>
                 </div>
                 <div class="header-actions">
@@ -53,8 +53,32 @@
                 </div>
             </header>
 
-            <div class="dashboard-grid" id="dashboard-content">
-                <!-- Content injected via JS -->
+            <div id="views-container">
+                <div id="view-dashboard" class="view-section active">
+                    <div class="dashboard-grid" id="dashboard-content">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+                
+                <div id="view-calendar" class="view-section" style="display: none;">
+                    <div class="card"><div class="card-body"><h2>Időpontok modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                </div>
+                
+                <div id="view-bills" class="view-section" style="display: none;">
+                    <div class="card"><div class="card-body"><h2>Számlák modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                </div>
+                
+                <div id="view-documents" class="view-section" style="display: none;">
+                    <div class="card"><div class="card-body"><h2>Papírok modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                </div>
+                
+                <div id="view-tasks" class="view-section" style="display: none;">
+                    <div class="card"><div class="card-body"><h2>Feladatok modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                </div>
+                
+                <div id="view-shopping" class="view-section" style="display: none;">
+                    <div class="card"><div class="card-body"><h2>Bevásárlás modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                </div>
             </div>
         </main>
     </div>

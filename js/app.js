@@ -110,10 +110,30 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDashboard();
 
     const navLinks = document.querySelectorAll('.nav-links li');
+    const viewSections = document.querySelectorAll('.view-section');
+    const pageTitle = document.getElementById('page-title');
+
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
+            // Update active state in sidebar
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
+
+            // Update page title
+            const titleText = link.querySelector('span').textContent;
+            pageTitle.textContent = titleText;
+
+            // Show corresponding view
+            const targetId = 'view-' + link.dataset.target;
+            viewSections.forEach(section => {
+                if (section.id === targetId) {
+                    section.classList.add('active');
+                    section.style.display = 'block';
+                } else {
+                    section.classList.remove('active');
+                    section.style.display = 'none';
+                }
+            });
         });
     });
 });
