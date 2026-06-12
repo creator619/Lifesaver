@@ -2,7 +2,8 @@
   "name": "LifeAdmin",
   "short_name": "LifeAdmin",
   "description": "A mindent egyben életadminisztrációs alkalmazás.",
-  "start_url": "./index.html",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#111827",
@@ -10,12 +11,14 @@
     {
       "src": "https://ui-avatars.com/api/?name=LA&background=111827&color=fff&size=192",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://ui-avatars.com/api/?name=LA&background=111827&color=fff&size=512",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
