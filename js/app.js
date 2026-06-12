@@ -97,10 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="card-title">Új Dokumentum / Számla</div>
                 </div>
                 <div class="card-body" style="height: calc(100% - 2rem); display: flex; align-items: center;">
-                    <div class="upload-zone" style="width: 100%;">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <p style="font-weight: 500; margin-bottom: 0.25rem;">Húzd ide a fájlt a feltöltéshez</p>
-                        <p style="font-size: 0.75rem;">Automatikusan feldolgozzuk az adatokat</p>
+                    <div class="upload-zone" id="upload-zone" style="width: 100%;">
+                        <input type="file" id="file-input" style="display: none;" multiple>
+                        <div id="upload-content">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p style="font-weight: 500; margin-bottom: 0.25rem;">Húzd ide a fájlt vagy kattints</p>
+                            <p style="font-size: 0.75rem;">Automatikusan feldolgozzuk az adatokat</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -108,6 +111,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderDashboard();
+
+    // Init Drag and Drop
+    function initUploadZone() {
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadContent = document.getElementById('upload-content');
+
+        if (!uploadZone) return;
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length) handleFiles(e.target.files);
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            const fileName = files[0].name;
+            
+            uploadContent.innerHTML = `
+                <div class="upload-state">
+                    <div class="spinner"></div>
+                    <p style="font-size: 0.85rem; font-weight: 500; margin-top: 0.5rem;">Fájl elemzése...</p>
+                    <p style="font-size: 0.7rem; color: var(--text-secondary);">${fileName}</p>
+                </div>
+            `;
+
+            setTimeout(() => {
+                uploadContent.innerHTML = `
+                    <div class="upload-state" style="color: var(--primary-color);">
+                        <i class="fa-solid fa-circle-check" style="font-size: 2rem;"></i>
+                        <p style="font-size: 0.85rem; font-weight: 500; margin-top: 0.5rem;">Sikeres feldolgozás!</p>
+                        <p style="font-size: 0.7rem; color: var(--text-secondary);">${fileName}</p>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    uploadContent.innerHTML = `
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p style="font-weight: 500; margin-bottom: 0.25rem;">Húzd ide a fájlt vagy kattints</p>
+                        <p style="font-size: 0.75rem;">Automatikusan feldolgozzuk az adatokat</p>
+                    `;
+                }, 3000);
+            }, 2000);
+        }
+    }
+
+    initUploadZone();
 
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
