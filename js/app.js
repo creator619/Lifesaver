@@ -41,6 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     }
 
+    if (!dashboardData.documents) {
+        dashboardData.documents = [
+            { name: "Lakásbérleti_szerződés.pdf", folder: "Szerződések", date: "2026. 05. 10.", size: "2.4 MB" },
+            { name: "Mosógép_garancia.jpg", folder: "Garanciák", date: "2026. 06. 01.", size: "1.1 MB" },
+            { name: "Vérvétel_eredmény.pdf", folder: "Egészségügy", date: "2026. 06. 11.", size: "0.8 MB" }
+        ];
+        saveData();
+    }
+
     function recalculateTasks() {
         dashboardData.tasks.total = dashboardData.tasks.items.length;
         dashboardData.tasks.completed = dashboardData.tasks.items.filter(t => t.status === 'completed').length;
@@ -227,6 +236,40 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    function renderDocumentsView() {
+        const container = document.getElementById('documents-content');
+        if (!container) return;
+
+        if (!dashboardData.documents || dashboardData.documents.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Nincsenek feltöltött iratok.</div>`;
+            return;
+        }
+
+        container.innerHTML = dashboardData.documents.map((doc, index) => `
+            <div class="document-item">
+                <div class="doc-info">
+                    <div class="doc-icon">
+                        <i class="fa-regular ${doc.name.toLowerCase().endsWith('.pdf') ? 'fa-file-pdf' : 'fa-image'}"></i>
+                    </div>
+                    <div class="doc-details">
+                        <h4>${doc.name}</h4>
+                        <p>${doc.folder} &bull; ${doc.date} &bull; ${doc.size}</p>
+                    </div>
+                </div>
+                <div class="card-action" style="display:flex; gap:0.5rem; align-items: center;">
+                    <button class="btn-icon" style="width:32px; height:32px;"><i class="fa-solid fa-download"></i></button>
+                    <button class="btn-danger-ghost" onclick="window.deleteDocument(${index})"><i class="fa-regular fa-trash-can"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.deleteDocument = function(index) {
+        dashboardData.documents.splice(index, 1);
+        saveData();
+        renderDocumentsView();
+    };
+
     function renderShoppingView() {
         const container = document.getElementById('shopping-content');
         if (!container) return;
@@ -270,9 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDashboard();
     renderCalendarView();
     renderBillsView();
+    renderDocumentsView();
     renderShoppingView();
 
-    // Init Drag and Drop
+    // Init Drag and Drop for Dashboard
     function initUploadZone() {
         const uploadZone = document.getElementById('upload-zone');
         const fileInput = document.getElementById('file-input');
@@ -333,6 +377,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initUploadZone();
+
+    // Init Drag and Drop for Documents Module
+    function initDocsUploadZone() {
+        const uploadZone = document.getElementById('docs-upload-zone');
+        const fileInput = document.getElementById('docs-file-input');
+        const uploadContent = document.getElementById('docs-upload-content');
+
+        if (!uploadZone) return;
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length) handleFiles(e.target.files);
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            const fileName = files[0].name;
+            
+            uploadContent.innerHTML = `
+                <div class="upload-state">
+                    <div class="spinner"></div>
+                    <p style="font-size: 0.85rem; font-weight: 500; margin-top: 0.5rem;">AI kategorizálás folyamatban...</p>
+                    <p style="font-size: 0.7rem; color: var(--text-secondary);">${fileName}</p>
+                </div>
+            `;
+
+            setTimeout(() => {
+                uploadContent.innerHTML = `
+                    <div class="upload-state" style="color: var(--primary-color);">
+                        <i class="fa-solid fa-circle-check" style="font-size: 2rem;"></i>
+                        <p style="font-size: 0.85rem; font-weight: 500; margin-top: 0.5rem;">Mentve és kategorizálva!</p>
+                        <p style="font-size: 0.7rem; color: var(--text-secondary);">${fileName}</p>
+                    </div>
+                `;
+                
+                // Add to data
+                dashboardData.documents.unshift({ 
+                    name: fileName, 
+                    folder: "Egyéb", // AI chose "Egyéb" as mock
+                    date: new Date().toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' }), 
+                    size: "1.2 MB" 
+                });
+                saveData();
+                renderDocumentsView();
+
+                setTimeout(() => {
+                    uploadContent.innerHTML = `
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p style="font-weight: 500; margin-bottom: 0.25rem;">Húzd ide az új iratot vagy kattints</p>
+                        <p style="font-size: 0.75rem;">AI automatikus kategorizálás</p>
+                    `;
+                }, 3000);
+            }, 2500);
+        }
+    }
+
+    initDocsUploadZone();
 
     // Init Tasks functionality
     function initTasks() {

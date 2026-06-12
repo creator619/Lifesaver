@@ -93,7 +93,52 @@
                 </div>
                 
                 <div id="view-documents" class="view-section" style="display: none;">
-                    <div class="card"><div class="card-body"><h2>Papírok modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                    <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 600;">Papírok és Iratok</h2>
+                    </div>
+
+                    <!-- Upload Zone -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <div class="card-body" style="padding: 1.5rem;">
+                            <div class="upload-zone" id="docs-upload-zone" style="width: 100%;">
+                                <input type="file" id="docs-file-input" style="display: none;" multiple>
+                                <div id="docs-upload-content">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <p style="font-weight: 500; margin-bottom: 0.25rem;">Húzd ide az új iratot vagy kattints</p>
+                                    <p style="font-size: 0.75rem;">AI automatikus kategorizálás</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Mappák</h3>
+                    <div class="folder-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="folder-card">
+                            <div class="folder-icon"><i class="fa-solid fa-folder"></i></div>
+                            <div class="folder-name">Szerződések</div>
+                            <div class="folder-count">1 irat</div>
+                        </div>
+                        <div class="folder-card">
+                            <div class="folder-icon" style="color: #3b82f6;"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="folder-name">Garanciák</div>
+                            <div class="folder-count">1 irat</div>
+                        </div>
+                        <div class="folder-card">
+                            <div class="folder-icon" style="color: #10b981;"><i class="fa-solid fa-heart-pulse"></i></div>
+                            <div class="folder-name">Egészségügy</div>
+                            <div class="folder-count">1 irat</div>
+                        </div>
+                        <div class="folder-card">
+                            <div class="folder-icon" style="color: #f59e0b;"><i class="fa-solid fa-box-archive"></i></div>
+                            <div class="folder-name">Egyéb</div>
+                            <div class="folder-count">0 irat</div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Legutóbbi iratok</h3>
+                    <div id="documents-content" class="card" style="padding: 0;">
+                        <!-- Injected via JS -->
+                    </div>
                 </div>
                 
                 <div id="view-tasks" class="view-section" style="display: none;">
