@@ -49,7 +49,7 @@
                 </div>
                 <div class="header-actions">
                     <button class="btn-icon"><i class="fa-regular fa-bell"></i></button>
-                    <button class="btn-primary">Új elem hozzáadása</button>
+                    <button class="btn-primary" id="btn-add-new">Új elem hozzáadása</button>
                 </div>
             </header>
 
@@ -81,6 +81,33 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Add New Item Modal -->
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Új elem hozzáadása</h2>
+                <button class="btn-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-item-form">
+                    <div class="form-group">
+                        <label>Típus</label>
+                        <select id="item-type" class="form-control">
+                            <option value="task">Feladat</option>
+                            <option value="appointment">Időpont</option>
+                            <option value="bill">Számla</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Megnevezés</label>
+                        <input type="text" id="item-title" class="form-control" placeholder="pl. Kutyatáp vásárlása" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">Mentés</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script src="js/app.js"></script>

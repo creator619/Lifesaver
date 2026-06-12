@@ -235,4 +235,57 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    // Modal Logic
+    const modal = document.getElementById('add-modal');
+    const btnAdd = document.getElementById('btn-add-new');
+    const btnClose = document.getElementById('btn-close-modal');
+    const addForm = document.getElementById('add-item-form');
+
+    if (btnAdd && modal) {
+        btnAdd.addEventListener('click', () => {
+            modal.classList.add('active');
+            document.getElementById('item-title').focus();
+        });
+
+        btnClose.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+
+        addForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const type = document.getElementById('item-type').value;
+            const title = document.getElementById('item-title').value;
+
+            if (type === 'task') {
+                dashboardData.tasks.items.push({ title: title, status: 'pending' });
+                dashboardData.tasks.total += 1;
+                
+                // Re-render dashboard
+                renderDashboard();
+                initUploadZone();
+                initTasks();
+            } else if (type === 'appointment') {
+                dashboardData.appointments.push({ title: title, time: "Hamarosan", type: "neutral" });
+                renderDashboard();
+                initUploadZone();
+                initTasks();
+            } else if (type === 'bill') {
+                dashboardData.bills.push({ title: title, amount: "-", due: "Feldolgozás alatt", type: "neutral" });
+                renderDashboard();
+                initUploadZone();
+                initTasks();
+            }
+            
+            // Close and reset
+            modal.classList.remove('active');
+            addForm.reset();
+        });
+    }
 });
