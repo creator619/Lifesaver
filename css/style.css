@@ -498,3 +498,78 @@ body {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
 }
+
+/* --- Appointments Module --- */
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+.appointment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.appointment-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.appointment-card:hover {
+    border-color: var(--text-secondary);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.appointment-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-main);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    min-width: 85px;
+    border: 1px solid var(--border-color);
+}
+
+.appointment-date .day {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+.appointment-date .month {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-top: 0.25rem;
+    letter-spacing: 0.5px;
+}
+
+.appointment-details {
+    flex: 1;
+    margin-left: 1.5rem;
+}
+
+.appointment-details h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.appointment-details p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

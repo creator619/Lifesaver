@@ -127,7 +127,44 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    function renderCalendarView() {
+        const container = document.getElementById('calendar-content');
+        if (!container) return;
+        
+        if (dashboardData.appointments.length === 0) {
+            container.innerHTML = `<div class="card"><div class="card-body" style="text-align: center; color: var(--text-secondary); padding: 2rem;">Nincsenek közelgő időpontok.</div></div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="appointment-list">
+                ${dashboardData.appointments.map(app => {
+                    let dayStr = "12";
+                    let monthStr = "JÚN";
+                    if (app.time.toLowerCase().includes("ma")) { dayStr = "12"; monthStr = "MA"; }
+                    else if (app.time.toLowerCase().includes("holnap")) { dayStr = "13"; monthStr = "HOLN"; }
+                    else { dayStr = "15"; monthStr = "JÚN"; }
+
+                    return `
+                    <div class="appointment-card">
+                        <div class="appointment-date">
+                            <span class="day">${dayStr}</span>
+                            <span class="month">${monthStr}</span>
+                        </div>
+                        <div class="appointment-details">
+                            <h3>${app.title}</h3>
+                            <p><i class="fa-regular fa-clock"></i> ${app.time}</p>
+                        </div>
+                        <div class="card-action" style="cursor: pointer; padding: 0.5rem;"><i class="fa-solid fa-ellipsis-vertical"></i></div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
     renderDashboard();
+    renderCalendarView();
 
     // Init Drag and Drop
     function initUploadZone() {
@@ -294,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Re-render dashboard
             renderDashboard();
+            renderCalendarView();
             initUploadZone();
             initTasks();
             
