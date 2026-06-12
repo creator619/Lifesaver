@@ -58,6 +58,18 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('lifeAdminData', JSON.stringify(dashboardData));
     }
 
+    // Haptic feedback utility (Android Vibration API)
+    function haptic(type = 'light') {
+        if (!navigator.vibrate) return;
+        const patterns = {
+            light:   [10],           // feladat pipálás, bevásárlás
+            medium:  [20],           // sikeres mentés
+            success: [10, 50, 30],   // számla fizetve, elem hozzáadva
+            delete:  [15, 30, 15],   // törlés
+        };
+        navigator.vibrate(patterns[type] || patterns.light);
+    }
+
     function updateGreeting() {
         // Set date
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -301,6 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.deleteDocument = function(index) {
         dashboardData.documents.splice(index, 1);
         saveData();
+        haptic('delete');
         renderDocumentsView();
     };
 
@@ -347,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardData.tasks.items[index].status = dashboardData.tasks.items[index].status === 'completed' ? 'pending' : 'completed';
         recalculateTasks();
         saveData();
+        haptic('light');
         renderDashboard();
         renderTasksView();
     };
@@ -355,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardData.tasks.items.splice(index, 1);
         recalculateTasks();
         saveData();
+        haptic('delete');
         renderDashboard();
         renderTasksView();
     };
@@ -382,12 +397,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toggleShoppingItem = function(index) {
         dashboardData.shopping[index].bought = !dashboardData.shopping[index].bought;
         saveData();
+        haptic('light');
         renderShoppingView();
     };
 
     window.deleteShoppingItem = function(index) {
         dashboardData.shopping.splice(index, 1);
         saveData();
+        haptic('delete');
         renderShoppingView();
     };
 
@@ -395,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardData.bills[index].type = 'success';
         dashboardData.bills[index].due = 'Teljesítve';
         saveData();
+        haptic('success');
         renderBillsView();
         renderDashboard();
     };
@@ -638,6 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dashboardData.bills.push({ title: title, amount: "-", due: "Feldolgozás alatt", type: "neutral" });
             }
             
+            haptic('success');
             saveData();
             
             // Re-render dashboard
