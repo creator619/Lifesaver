@@ -31,6 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardData = defaultData;
     }
 
+    // Initialize shopping data if missing or in old string format
+    if (!dashboardData.shopping || (dashboardData.shopping.length > 0 && typeof dashboardData.shopping[0] === 'string')) {
+        dashboardData.shopping = [
+            { name: "Kenyér", bought: false },
+            { name: "Tej (2l)", bought: false },
+            { name: "Paradicsom", bought: false }
+        ];
+        saveData();
+    }
+
     function recalculateTasks() {
         dashboardData.tasks.total = dashboardData.tasks.items.length;
         dashboardData.tasks.completed = dashboardData.tasks.items.filter(t => t.status === 'completed').length;
@@ -217,6 +227,38 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    function renderShoppingView() {
+        const container = document.getElementById('shopping-content');
+        if (!container) return;
+
+        if (!dashboardData.shopping || dashboardData.shopping.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">A bevásárlólista üres.</div>`;
+            return;
+        }
+
+        container.innerHTML = dashboardData.shopping.map((item, index) => `
+            <div class="shopping-item ${item.bought ? 'bought' : ''}">
+                <label class="shopping-item-left checkbox-label" style="margin: 0; cursor: pointer;">
+                    <input type="checkbox" onchange="window.toggleShoppingItem(${index})" ${item.bought ? 'checked' : ''}>
+                    <span class="shopping-item-text">${item.name}</span>
+                </label>
+                <button class="btn-danger-ghost" onclick="window.deleteShoppingItem(${index})"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+        `).join('');
+    }
+
+    window.toggleShoppingItem = function(index) {
+        dashboardData.shopping[index].bought = !dashboardData.shopping[index].bought;
+        saveData();
+        renderShoppingView();
+    };
+
+    window.deleteShoppingItem = function(index) {
+        dashboardData.shopping.splice(index, 1);
+        saveData();
+        renderShoppingView();
+    };
+
     window.markBillPaid = function(index) {
         dashboardData.bills[index].type = 'success';
         dashboardData.bills[index].due = 'Teljesítve';
@@ -228,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDashboard();
     renderCalendarView();
     renderBillsView();
+    renderShoppingView();
 
     // Init Drag and Drop
     function initUploadZone() {
@@ -329,6 +372,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
     const pageTitle = document.getElementById('page-title');
+
+    // Shopping Add form
+    const shoppingForm = document.getElementById('shopping-form');
+    if (shoppingForm) {
+        shoppingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('shopping-input');
+            const val = input.value.trim();
+            if (val) {
+                dashboardData.shopping.unshift({ name: val, bought: false });
+                saveData();
+                renderShoppingView();
+                input.value = '';
+            }
+        });
+    }
 
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
