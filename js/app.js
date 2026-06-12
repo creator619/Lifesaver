@@ -1,9 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Set current date
-    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const dateStr = new Date().toLocaleDateString('hu-HU', dateOptions);
-    document.getElementById('current-date').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+    // Date and Greeting logic handled in updateGreeting()
 
     // Default Data
     const defaultData = {
@@ -61,9 +58,46 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('lifeAdminData', JSON.stringify(dashboardData));
     }
 
+    function updateGreeting() {
+        // Set date
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = new Date().toLocaleDateString('hu-HU', dateOptions);
+        document.getElementById('current-date').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+        // Dynamic greeting based on time
+        const hour = new Date().getHours();
+        let greeting = "Szia!";
+        
+        if (hour >= 5 && hour < 10) greeting = "Jó reggelt!";
+        else if (hour >= 10 && hour < 14) greeting = "Szép napot!";
+        else if (hour >= 14 && hour < 18) greeting = "Kellemes délutánt!";
+        else greeting = "Jó estét!";
+        
+        // Smart summary based on data
+        let pendingTasks = dashboardData.tasks.items.filter(t => t.status === 'pending').length;
+        let unpaidBills = dashboardData.bills.filter(b => b.type !== 'success').length;
+        
+        let subtitle = "";
+        if (pendingTasks === 0 && unpaidBills === 0) {
+            subtitle = "Minden teendő és számla elintézve. Pihenj egyet! 🎉";
+        } else {
+            const parts = [];
+            if (pendingTasks > 0) parts.push(`${pendingTasks} feladat`);
+            if (unpaidBills > 0) parts.push(`${unpaidBills} számla`);
+            subtitle = `Ma még ${parts.join(' és ')} vár rád.`;
+        }
+
+        const greetingEl = document.getElementById('greeting-title');
+        const subtitleEl = document.getElementById('greeting-subtitle');
+        
+        if (greetingEl) greetingEl.textContent = greeting;
+        if (subtitleEl) subtitleEl.textContent = subtitle;
+    }
+
     const dashboardContent = document.getElementById('dashboard-content');
 
     function renderDashboard() {
+        updateGreeting();
         dashboardContent.innerHTML = `
             <!-- Időpontok Kártya -->
             <div class="card">
