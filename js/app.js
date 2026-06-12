@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateStr = new Date().toLocaleDateString('hu-HU', dateOptions);
     document.getElementById('current-date').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
-    // Mock Data
-    const dashboardData = {
+    // Default Data
+    const defaultData = {
         appointments: [
             { title: "Fogorvos", time: "Ma, 14:30", type: "warning" },
             { title: "Autó szerviz", time: "Holnap, 08:00", type: "neutral" }
@@ -16,14 +16,31 @@ document.addEventListener('DOMContentLoaded', () => {
             { title: "Közös költség", amount: "25 000 Ft", due: "3 nap múlva", type: "warning" }
         ],
         tasks: {
-            completed: 2,
-            total: 5,
+            completed: 0,
+            total: 2,
             items: [
                 { title: "Postára menni", status: "pending" },
                 { title: "Havi riport átnézése", status: "pending" }
             ]
         }
     };
+
+    let dashboardData = JSON.parse(localStorage.getItem('lifeAdminData'));
+    
+    if (!dashboardData) {
+        dashboardData = defaultData;
+    }
+
+    function recalculateTasks() {
+        dashboardData.tasks.total = dashboardData.tasks.items.length;
+        dashboardData.tasks.completed = dashboardData.tasks.items.filter(t => t.status === 'completed').length;
+    }
+    
+    recalculateTasks();
+
+    function saveData() {
+        localStorage.setItem('lifeAdminData', JSON.stringify(dashboardData));
+    }
 
     const dashboardContent = document.getElementById('dashboard-content');
 
@@ -189,7 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Update internal data
                 dashboardData.tasks.items[index].status = isChecked ? 'completed' : 'pending';
-                dashboardData.tasks.completed += isChecked ? 1 : -1;
+                recalculateTasks();
+                saveData();
                 
                 // Update visual styling
                 const label = e.target.closest('.checkbox-label');
@@ -265,23 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (type === 'task') {
                 dashboardData.tasks.items.push({ title: title, status: 'pending' });
-                dashboardData.tasks.total += 1;
-                
-                // Re-render dashboard
-                renderDashboard();
-                initUploadZone();
-                initTasks();
+                recalculateTasks();
             } else if (type === 'appointment') {
                 dashboardData.appointments.push({ title: title, time: "Hamarosan", type: "neutral" });
-                renderDashboard();
-                initUploadZone();
-                initTasks();
             } else if (type === 'bill') {
                 dashboardData.bills.push({ title: title, amount: "-", due: "Feldolgozás alatt", type: "neutral" });
-                renderDashboard();
-                initUploadZone();
-                initTasks();
             }
+            
+            saveData();
+            
+            // Re-render dashboard
+            renderDashboard();
+            initUploadZone();
+            initTasks();
             
             // Close and reset
             modal.classList.remove('active');
