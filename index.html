@@ -71,7 +71,25 @@
                 </div>
                 
                 <div id="view-bills" class="view-section" style="display: none;">
-                    <div class="card"><div class="card-body"><h2>Számlák modul</h2><p style="color: var(--text-secondary); margin-top: 0.5rem;">Fejlesztés alatt...</p></div></div>
+                    <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 600;">Számlák kezelése</h2>
+                        <button class="btn-primary btn-sm" onclick="document.getElementById('item-type').value='bill'; document.getElementById('btn-add-new').click();"><i class="fa-solid fa-plus"></i> Új számla</button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="card" style="padding: 1.25rem;">
+                            <span style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Fizetendő összesen</span>
+                            <div id="total-due" style="font-size: 1.75rem; font-weight: 700; color: #991b1b; margin-top: 0.5rem;">0 Ft</div>
+                        </div>
+                        <div class="card" style="padding: 1.25rem;">
+                            <span style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Kifizetve (e havi)</span>
+                            <div id="total-paid" style="font-size: 1.75rem; font-weight: 700; color: #166534; margin-top: 0.5rem;">0 Ft</div>
+                        </div>
+                    </div>
+
+                    <div id="bills-content">
+                        <!-- Injected via JS -->
+                    </div>
                 </div>
                 
                 <div id="view-documents" class="view-section" style="display: none;">

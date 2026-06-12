@@ -291,6 +291,7 @@ body {
 .tag-neutral { background: var(--bg-main); color: var(--text-secondary); }
 .tag-alert { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
 .tag-warning { background: #fffbeb; color: #92400e; border-color: #fef3c7; }
+.tag-success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
 
 /* Progress */
 .progress-header {

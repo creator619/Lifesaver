@@ -163,8 +163,71 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    function renderBillsView() {
+        const container = document.getElementById('bills-content');
+        if (!container) return;
+
+        let dueTotal = 0;
+        let paidTotal = 0;
+        
+        dashboardData.bills.forEach(bill => {
+            const amountNum = parseInt(bill.amount.replace(/[^0-9]/g, '')) || 0;
+            if (bill.type === 'success') {
+                paidTotal += amountNum;
+            } else {
+                dueTotal += amountNum;
+            }
+        });
+
+        const dueEl = document.getElementById('total-due');
+        const paidEl = document.getElementById('total-paid');
+        if (dueEl) dueEl.textContent = new Intl.NumberFormat('hu-HU').format(dueTotal) + " Ft";
+        if (paidEl) paidEl.textContent = new Intl.NumberFormat('hu-HU').format(paidTotal) + " Ft";
+
+        if (dashboardData.bills.length === 0) {
+            container.innerHTML = `<div class="card"><div class="card-body" style="text-align: center; color: var(--text-secondary); padding: 2rem;">Nincsenek számlák.</div></div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="appointment-list">
+                ${dashboardData.bills.map((bill, index) => {
+                    const isPaid = bill.type === 'success';
+                    return `
+                    <div class="appointment-card" style="${isPaid ? 'opacity: 0.6;' : ''}">
+                        <div class="appointment-date" style="background: ${isPaid ? '#f0fdf4' : 'var(--bg-main)'}; border-color: ${isPaid ? '#bbf7d0' : 'var(--border-color)'};">
+                            <i class="fa-solid fa-file-invoice-dollar" style="font-size: 1.5rem; color: ${isPaid ? '#16a34a' : 'var(--text-secondary)'};"></i>
+                        </div>
+                        <div class="appointment-details">
+                            <h3 style="text-decoration: ${isPaid ? 'line-through' : 'none'};">${bill.title}</h3>
+                            <p style="color: ${bill.type === 'alert' ? '#991b1b' : 'var(--text-secondary)'}; font-weight: 500;">
+                                ${bill.amount} &bull; ${bill.due}
+                            </p>
+                        </div>
+                        <div class="card-action">
+                            ${!isPaid ? 
+                                `<button class="btn-sm" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; color: var(--text-primary); font-weight: 500;" onclick="window.markBillPaid(${index})"><i class="fa-solid fa-check" style="color: #16a34a;"></i> Fizetve</button>` 
+                                : '<span class="tag tag-success">Teljesítve</span>'
+                            }
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    window.markBillPaid = function(index) {
+        dashboardData.bills[index].type = 'success';
+        dashboardData.bills[index].due = 'Teljesítve';
+        saveData();
+        renderBillsView();
+        renderDashboard();
+    };
+
     renderDashboard();
     renderCalendarView();
+    renderBillsView();
 
     // Init Drag and Drop
     function initUploadZone() {
@@ -332,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Re-render dashboard
             renderDashboard();
             renderCalendarView();
+            renderBillsView();
             initUploadZone();
             initTasks();
             
