@@ -62,10 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function haptic(type = 'light') {
         if (!navigator.vibrate) return;
         const patterns = {
-            light:   [10],           // feladat pipálás, bevásárlás
-            medium:  [20],           // sikeres mentés
-            success: [10, 50, 30],   // számla fizetve, elem hozzáadva
-            delete:  [15, 30, 15],   // törlés
+            light:   [50],              // feladat pipálás, bevásárlás
+            medium:  [80],              // sikeres mentés
+            success: [60, 80, 100],     // számla fizetve, elem hozzáadva
+            delete:  [80, 60, 80],      // törlés
         };
         navigator.vibrate(patterns[type] || patterns.light);
     }
