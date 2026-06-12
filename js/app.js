@@ -627,8 +627,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const addForm = document.getElementById('add-item-form');
 
     if (btnAdd && modal) {
+        const itemTypeSelect = document.getElementById('item-type');
+        const billFields = document.getElementById('bill-fields');
+
+        function toggleBillFields() {
+            billFields.style.display = itemTypeSelect.value === 'bill' ? 'block' : 'none';
+        }
+
         btnAdd.addEventListener('click', () => {
             modal.classList.add('active');
+            toggleBillFields(); // Show/hide based on currently selected type
             document.getElementById('item-title').focus();
         });
 
@@ -642,12 +650,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Show/hide bill-specific fields
-        const itemTypeSelect = document.getElementById('item-type');
-        const billFields = document.getElementById('bill-fields');
-        itemTypeSelect.addEventListener('change', () => {
-            billFields.style.display = itemTypeSelect.value === 'bill' ? 'block' : 'none';
-        });
+        // Update fields whenever type dropdown changes
+        itemTypeSelect.addEventListener('change', toggleBillFields);
 
         addForm.addEventListener('submit', (e) => {
             e.preventDefault();
