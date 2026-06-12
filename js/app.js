@@ -75,15 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card-body">
                     <div class="progress-header">
                         <span>Folyamatban</span>
-                        <span>${dashboardData.tasks.completed} / ${dashboardData.tasks.total} kész</span>
+                        <span id="task-counter">${dashboardData.tasks.completed} / ${dashboardData.tasks.total} kész</span>
                     </div>
                     <div class="progress-container">
-                        <div class="progress-bar" style="width: ${(dashboardData.tasks.completed / dashboardData.tasks.total) * 100}%"></div>
+                        <div id="task-progress" class="progress-bar" style="width: ${(dashboardData.tasks.completed / dashboardData.tasks.total) * 100}%"></div>
                     </div>
-                    <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
-                        ${dashboardData.tasks.items.map(task => `
-                            <label class="checkbox-label">
-                                <input type="checkbox">
+                    <div id="task-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
+                        ${dashboardData.tasks.items.map((task, index) => `
+                            <label class="checkbox-label ${task.status === 'completed' ? 'completed-task' : ''}">
+                                <input type="checkbox" data-index="${index}" ${task.status === 'completed' ? 'checked' : ''}>
                                 <span>${task.title}</span>
                             </label>
                         `).join('')}
@@ -173,6 +173,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initUploadZone();
+
+    // Init Tasks functionality
+    function initTasks() {
+        const taskList = document.getElementById('task-list');
+        const taskCounter = document.getElementById('task-counter');
+        const taskProgress = document.getElementById('task-progress');
+
+        if (!taskList) return;
+
+        taskList.addEventListener('change', (e) => {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+                const index = e.target.dataset.index;
+                const isChecked = e.target.checked;
+                
+                // Update internal data
+                dashboardData.tasks.items[index].status = isChecked ? 'completed' : 'pending';
+                dashboardData.tasks.completed += isChecked ? 1 : -1;
+                
+                // Update visual styling
+                const label = e.target.closest('.checkbox-label');
+                if (isChecked) {
+                    label.classList.add('completed-task');
+                } else {
+                    label.classList.remove('completed-task');
+                }
+                
+                // Update progress bar and counter
+                taskCounter.textContent = `${dashboardData.tasks.completed} / ${dashboardData.tasks.total} kész`;
+                taskProgress.style.width = `${(dashboardData.tasks.completed / dashboardData.tasks.total) * 100}%`;
+            }
+        });
+    }
+
+    initTasks();
 
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
