@@ -736,7 +736,7 @@ body {
         z-index: 50;
     }
 
-    .logo, .nav-section, .user-profile {
+    .logo, .nav-section, .user-profile-container {
         display: none !important; /* Hide logo, sections and user profile on bottom bar */
     }
 
@@ -821,4 +821,117 @@ body {
     .card-action .btn-sm {
         width: 100%;
     }
+
+    #btn-logout-mobile {
+        display: flex !important;
+    }
+}
+
+/* --- Desktop/Default settings for buttons --- */
+#btn-logout-mobile {
+    display: none;
+}
+
+/* --- Authentication Screen --- */
+.auth-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at 10% 20%, rgba(243, 244, 246, 1) 0%, rgba(229, 231, 235, 1) 90%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.auth-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+    animation: authFadeIn 0.4s ease;
+}
+
+@keyframes authFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+}
+
+.auth-logo .logo-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.75rem;
+    text-align: center;
+}
+
+.auth-switch {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 1.5rem;
+}
+
+.auth-switch a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+.btn-logout {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0.4rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-logout:hover {
+    color: #ef4444;
+    background: #fef2f2;
 }

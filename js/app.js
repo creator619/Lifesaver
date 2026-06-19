@@ -19,43 +19,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 { title: "Postára menni", status: "pending" },
                 { title: "Havi riport átnézése", status: "pending" }
             ]
-        }
-    };
-
-    let dashboardData = JSON.parse(localStorage.getItem('lifeAdminData'));
-    
-    if (!dashboardData) {
-        dashboardData = defaultData;
-    }
-
-    // Initialize shopping data if missing or in old string format
-    if (!dashboardData.shopping || (dashboardData.shopping.length > 0 && typeof dashboardData.shopping[0] === 'string')) {
-        dashboardData.shopping = [
+        },
+        shopping: [
             { name: "Kenyér", bought: false },
             { name: "Tej (2l)", bought: false },
             { name: "Paradicsom", bought: false }
-        ];
-        saveData();
-    }
-
-    if (!dashboardData.documents) {
-        dashboardData.documents = [
+        ],
+        documents: [
             { name: "Lakásbérleti_szerződés.pdf", folder: "Szerződések", date: "2026. 05. 10.", size: "2.4 MB" },
             { name: "Mosógép_garancia.jpg", folder: "Garanciák", date: "2026. 06. 01.", size: "1.1 MB" },
             { name: "Vérvétel_eredmény.pdf", folder: "Egészségügy", date: "2026. 06. 11.", size: "0.8 MB" }
-        ];
-        saveData();
+        ]
+    };
+
+    // User Management Database
+    let users = JSON.parse(localStorage.getItem('lifeAdminUsers')) || {};
+
+    // Register simple default user if empty
+    if (Object.keys(users).length === 0) {
+        users['simone@example.com'] = {
+            name: 'Simone',
+            password: '123',
+            data: JSON.parse(JSON.stringify(defaultData))
+        };
+        localStorage.setItem('lifeAdminUsers', JSON.stringify(users));
     }
 
+    let activeUserEmail = localStorage.getItem('lifeAdminActiveUser');
+    let dashboardData = null;
+
     function recalculateTasks() {
+        if (!dashboardData || !dashboardData.tasks) return;
         dashboardData.tasks.total = dashboardData.tasks.items.length;
         dashboardData.tasks.completed = dashboardData.tasks.items.filter(t => t.status === 'completed').length;
     }
-    
-    recalculateTasks();
+
+    function initActiveUserData() {
+        if (activeUserEmail && users[activeUserEmail]) {
+            dashboardData = users[activeUserEmail].data;
+            // Fallback default checks to ensure data completeness
+            if (!dashboardData.shopping) dashboardData.shopping = JSON.parse(JSON.stringify(defaultData.shopping));
+            if (!dashboardData.documents) dashboardData.documents = JSON.parse(JSON.stringify(defaultData.documents));
+            if (!dashboardData.appointments) dashboardData.appointments = JSON.parse(JSON.stringify(defaultData.appointments));
+            if (!dashboardData.bills) dashboardData.bills = JSON.parse(JSON.stringify(defaultData.bills));
+            if (!dashboardData.tasks) dashboardData.tasks = JSON.parse(JSON.stringify(defaultData.tasks));
+            recalculateTasks();
+        }
+    }
 
     function saveData() {
-        localStorage.setItem('lifeAdminData', JSON.stringify(dashboardData));
+        if (activeUserEmail && users[activeUserEmail]) {
+            users[activeUserEmail].data = dashboardData;
+            localStorage.setItem('lifeAdminUsers', JSON.stringify(users));
+        }
     }
 
     // Haptic feedback utility (Android Vibration API)
@@ -417,12 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderDashboard();
     };
 
-    renderDashboard();
-    renderCalendarView();
-    renderBillsView();
-    renderDocumentsView();
-    renderTasksView();
-    renderShoppingView();
+    // Removed direct execution, now called inside checkAuthState()
 
     // Init Drag and Drop for Dashboard
     function initUploadZone() {
@@ -800,4 +811,142 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // --- Authentication Flow ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+
+    function checkAuthState() {
+        users = JSON.parse(localStorage.getItem('lifeAdminUsers')) || {};
+        activeUserEmail = localStorage.getItem('lifeAdminActiveUser');
+        
+        if (activeUserEmail && users[activeUserEmail]) {
+            initActiveUserData();
+            
+            // Update User Profile UI
+            const nameSidebar = document.getElementById('user-name-sidebar');
+            const emailSidebar = document.getElementById('user-email-sidebar');
+            const avatarSidebar = document.getElementById('user-avatar-sidebar');
+            
+            const name = users[activeUserEmail].name;
+            if (nameSidebar) nameSidebar.textContent = name;
+            if (emailSidebar) emailSidebar.textContent = activeUserEmail;
+            if (avatarSidebar) avatarSidebar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f3f4f6&color=111827`;
+
+            if (authContainer) authContainer.style.display = 'none';
+            if (appContainer) appContainer.style.display = 'flex';
+            
+            // Re-render everything
+            renderDashboard();
+            renderCalendarView();
+            renderBillsView();
+            renderDocumentsView();
+            renderTasksView();
+            renderShoppingView();
+        } else {
+            if (authContainer) authContainer.style.display = 'flex';
+            if (appContainer) appContainer.style.display = 'none';
+        }
+    }
+
+    // Toggle Login/Register Forms
+    const switchToRegister = document.getElementById('switch-to-register');
+    const switchToLogin = document.getElementById('switch-to-login');
+    const loginFormWrapper = document.getElementById('login-form-wrapper');
+    const registerFormWrapper = document.getElementById('register-form-wrapper');
+
+    if (switchToRegister) {
+        switchToRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginFormWrapper.style.display = 'none';
+            registerFormWrapper.style.display = 'block';
+            document.getElementById('register-name').focus();
+        });
+    }
+
+    if (switchToLogin) {
+        switchToLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerFormWrapper.style.display = 'none';
+            loginFormWrapper.style.display = 'block';
+            document.getElementById('login-email').focus();
+        });
+    }
+
+    // Login Form Submit
+    const loginForm = document.getElementById('auth-login-form');
+    const loginError = document.getElementById('login-error');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+
+            if (users[email] && users[email].password === password) {
+                localStorage.setItem('lifeAdminActiveUser', email);
+                loginForm.reset();
+                if (loginError) loginError.style.display = 'none';
+                haptic('success');
+                checkAuthState();
+            } else {
+                if (loginError) {
+                    loginError.textContent = 'Hibás email cím vagy jelszó!';
+                    loginError.style.display = 'block';
+                }
+                haptic('delete');
+            }
+        });
+    }
+
+    // Register Form Submit
+    const registerForm = document.getElementById('auth-register-form');
+    const registerError = document.getElementById('register-error');
+    if (registerForm) {
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim().toLowerCase();
+            const password = document.getElementById('register-password').value;
+
+            if (users[email]) {
+                if (registerError) {
+                    registerError.textContent = 'Ez az email cím már regisztrálva van!';
+                    registerError.style.display = 'block';
+                }
+                haptic('delete');
+            } else {
+                users[email] = {
+                    name: name,
+                    password: password,
+                    data: JSON.parse(JSON.stringify(defaultData)) // Deep copy of defaults
+                };
+                localStorage.setItem('lifeAdminUsers', JSON.stringify(users));
+                localStorage.setItem('lifeAdminActiveUser', email);
+                registerForm.reset();
+                if (registerError) registerError.style.display = 'none';
+                haptic('success');
+                checkAuthState();
+            }
+        });
+    }
+
+    // Logout Logic
+    function handleLogout() {
+        localStorage.removeItem('lifeAdminActiveUser');
+        haptic('light');
+        checkAuthState();
+    }
+
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', handleLogout);
+    }
+
+    const btnLogoutMobile = document.getElementById('btn-logout-mobile');
+    if (btnLogoutMobile) {
+        btnLogoutMobile.addEventListener('click', handleLogout);
+    }
+
+    // Initial check
+    checkAuthState();
 });
