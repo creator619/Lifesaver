@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lifeadmin-cache-v4';
+const CACHE_NAME = 'lifeadmin-cache-v5';
 const urlsToCache = [
   './index.html',
   './css/style.css',
