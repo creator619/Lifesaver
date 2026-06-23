@@ -237,11 +237,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(btnAdd&&modal){
         const typeSelect=document.getElementById('item-type');
         const billFields=document.getElementById('bill-fields');
-        const toggleBill=()=>{ if(billFields) billFields.style.display=typeSelect.value==='bill'?'block':'none'; };
-        btnAdd.onclick=()=>{ modal.classList.add('active'); toggleBill(); document.getElementById('item-title').focus(); };
+        const appointmentFields=document.getElementById('appointment-fields');
+        const toggleFields=()=>{ 
+            if(billFields) billFields.style.display=typeSelect.value==='bill'?'block':'none'; 
+            if(appointmentFields) appointmentFields.style.display=typeSelect.value==='appointment'?'block':'none'; 
+        };
+        btnAdd.onclick=()=>{ modal.classList.add('active'); toggleFields(); document.getElementById('item-title').focus(); };
         btnClose.onclick=()=>modal.classList.remove('active');
         modal.onclick=(e)=>{ if(e.target===modal) modal.classList.remove('active'); };
-        typeSelect.onchange=toggleBill;
+        typeSelect.onchange=toggleFields;
         addForm.addEventListener('submit', async(e)=>{
             e.preventDefault();
             const type=typeSelect.value, title=document.getElementById('item-title').value;
@@ -249,7 +253,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const t=await SupaDB.addTask(title, currentUser.id);
                 if(t){ dashboardData.tasks.items.unshift(t); recalcTasks(); renderDashboard(); renderTasksView(); }
             } else if(type==='appointment'){
-                const a=await SupaDB.addAppointment(title,'Hamarosan','neutral',currentUser.id);
+                const rawTime = document.getElementById('item-datetime')?.value;
+                let timeString = 'Hamarosan';
+                let aptType = 'neutral';
+                if (rawTime) {
+                    const d = new Date(rawTime);
+                    const now = new Date();
+                    const isMa = d.toDateString() === now.toDateString();
+                    if (isMa) {
+                        timeString = 'Ma ' + d.toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
+                        aptType = 'alert';
+                    } else {
+                        timeString = d.toLocaleString('hu-HU', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                        if (d - now < 2*24*60*60*1000) aptType = 'warning';
+                    }
+                }
+                const a=await SupaDB.addAppointment(title,timeString,aptType,currentUser.id);
                 if(a){ dashboardData.appointments.unshift(a); renderDashboard(); renderCalendarView(); }
             } else if(type==='bill'){
                 const rawAmt=document.getElementById('item-amount').value;

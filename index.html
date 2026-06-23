@@ -278,6 +278,13 @@
                         <label>Megnevezés</label>
                         <input type="text" id="item-title" class="form-control" placeholder="pl. Kutyatáp vásárlása" required>
                     </div>
+                    <!-- Extra fields for appointments only -->
+                    <div id="appointment-fields" style="display: none;">
+                        <div class="form-group">
+                            <label>Időpont (Dátum és Idő)</label>
+                            <input type="datetime-local" id="item-datetime" class="form-control">
+                        </div>
+                    </div>
                     <!-- Extra fields for bills only -->
                     <div id="bill-fields" style="display: none;">
                         <div class="form-group">
