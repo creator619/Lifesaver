@@ -322,8 +322,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function showApp(user) {
         currentUser = user;
         const name = user.user_metadata?.full_name || user.email.split('@')[0];
-        const ne=document.getElementById('user-name-sidebar'), ee=document.getElementById('user-email-sidebar'), ae=document.getElementById('user-avatar-sidebar');
+        const fCode = user.user_metadata?.family_code || 'N/A';
+        const ne=document.getElementById('user-name-sidebar'), ee=document.getElementById('user-email-sidebar'), ae=document.getElementById('user-avatar-sidebar'), fe=document.getElementById('user-family-code-sidebar');
         if(ne) ne.textContent=name; if(ee) ee.textContent=user.email;
+        if(fe) fe.textContent=`CSALÁD KÓD: ${fCode}`;
         if(ae) ae.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f3f4f6&color=111827`;
         if(authContainer) authContainer.style.display='none';
         if(appContainer) appContainer.style.display='flex';
@@ -367,8 +369,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const name=document.getElementById('register-name').value.trim();
         const email=document.getElementById('register-email').value.trim();
         const password=document.getElementById('register-password').value;
+        const rawCode=document.getElementById('register-family-code')?.value.trim().toUpperCase() || '';
+        const familyCode = rawCode ? rawCode : Math.random().toString(36).substring(2,8).toUpperCase();
+        
         const errEl=document.getElementById('register-error');
-        const {data,error}=await SupaDB.register(email,password,name);
+        const {data,error}=await SupaDB.register(email,password,name,familyCode);
         if(error){
             console.error("Supabase Error:", error);
             let msg = error.message;

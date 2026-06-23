@@ -66,6 +66,10 @@
                         <label for="register-password">Jelszó</label>
                         <input type="password" id="register-password" class="form-control" placeholder="Legalább 6 karakter" minlength="6" required autocomplete="new-password">
                     </div>
+                    <div class="form-group" style="margin-top: -0.5rem; margin-bottom: 1.25rem;">
+                        <label for="register-family-code" style="color: var(--primary-color);">Család Csatlakozási Kód <span style="font-size:0.75rem;font-weight:normal;color:var(--text-secondary)">(Opcionális)</span></label>
+                        <input type="text" id="register-family-code" class="form-control" placeholder="Hagyd üresen, ha új családot hozol létre!" style="text-transform: uppercase; border-color: var(--primary-color);">
+                    </div>
                     <div class="auth-error" id="register-error" style="display: none; color: #ef4444; font-size: 0.85rem; margin-bottom: 1.25rem; text-align: center; font-weight: 500;"></div>
                     <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 42px; font-weight: 600;">Fiók létrehozása</button>
                 </form>
@@ -99,6 +103,7 @@
                     <div class="user-info">
                         <span class="name" id="user-name-sidebar">Simone</span>
                         <span class="email" id="user-email-sidebar">simone@example.com</span>
+                        <span class="email" id="user-family-code-sidebar" style="font-size: 0.7rem; font-weight: 700; color: var(--primary-color); margin-top: 2px;">KÓD: ------</span>
                     </div>
                 </div>
                 <button class="btn-logout" id="btn-logout" title="Kijelentkezés" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; padding: 0.4rem; border-radius: var(--radius-sm); transition: all 0.15s ease; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-right-from-bracket"></i></button>

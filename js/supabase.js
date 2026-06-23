@@ -12,8 +12,8 @@ window.SupaDB = {
     async login(email, password) {
         return await _db.auth.signInWithPassword({ email, password });
     },
-    async register(email, password, name) {
-        return await _db.auth.signUp({ email, password, options: { data: { full_name: name } } });
+    async register(email, password, name, familyCode) {
+        return await _db.auth.signUp({ email, password, options: { data: { full_name: name, family_code: familyCode } } });
     },
     async logout() {
         await _db.auth.signOut();
