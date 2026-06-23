@@ -107,10 +107,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- RENDER DOCUMENTS ---
+    let currentDocumentFolder = null;
+    const folderConfig = [
+        { name: 'Szerződések', icon: 'fa-folder', color: 'var(--text-primary)' },
+        { name: 'Garanciák', icon: 'fa-shield-halved', color: '#3b82f6' },
+        { name: 'Egészségügy', icon: 'fa-heart-pulse', color: '#10b981' },
+        { name: 'Egyéb', icon: 'fa-box-archive', color: '#f59e0b' }
+    ];
+
+    window.selectFolder = (folderName) => {
+        currentDocumentFolder = folderName;
+        haptic('light');
+        renderDocumentsView();
+    };
+
     function renderDocumentsView() {
+        const foldersContainer = document.getElementById('folders-container');
+        if(foldersContainer) {
+            foldersContainer.innerHTML = folderConfig.map(f => {
+                const count = dashboardData.documents.filter(d => d.folder === f.name).length;
+                const isActive = currentDocumentFolder === f.name;
+                return `
+                <div class="folder-card" style="cursor: pointer; transition: all 0.2s ease; ${isActive ? 'border-color: var(--primary-color); background: var(--bg-main); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);' : ''}" onclick="window.selectFolder('${f.name}')">
+                    <div class="folder-icon" style="color: ${f.color}"><i class="fa-solid ${f.icon}"></i></div>
+                    <div class="folder-name">${f.name}</div>
+                    <div class="folder-count">${count} irat</div>
+                </div>`;
+            }).join('');
+        }
+
+        const titleEl = document.getElementById('current-folder-title');
+        const clearBtn = document.getElementById('btn-clear-folder');
+        if(titleEl) titleEl.textContent = currentDocumentFolder ? currentDocumentFolder : 'Minden irat';
+        if(clearBtn) clearBtn.style.display = currentDocumentFolder ? 'block' : 'none';
+
         const c=document.getElementById('documents-content'); if(!c) return;
-        if(!dashboardData.documents.length){c.innerHTML=`<div style="text-align:center;color:var(--text-secondary);padding:2rem">Nincsenek feltöltött iratok.</div>`;return;}
-        c.innerHTML=dashboardData.documents.map(d=>`
+        const docs = currentDocumentFolder ? dashboardData.documents.filter(d => d.folder === currentDocumentFolder) : dashboardData.documents;
+
+        if(!docs.length){c.innerHTML=`<div style="text-align:center;color:var(--text-secondary);padding:2rem">Nincsenek feltöltött iratok ebben a mappában.</div>`;return;}
+        c.innerHTML=docs.map(d=>`
         <div class="document-item">
             <div class="doc-info"><div class="doc-icon"><i class="fa-regular ${d.name.toLowerCase().endsWith('.pdf')?'fa-file-pdf':'fa-image'}"></i></div>
             <div class="doc-details"><h4>${d.name}</h4><p>${d.folder} &bull; ${d.date} &bull; ${d.size}</p></div></div>
