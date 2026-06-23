@@ -351,7 +351,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const password=document.getElementById('login-password').value;
         const errEl=document.getElementById('login-error');
         const {data,error}=await SupaDB.login(email,password);
-        if(error){if(errEl){errEl.textContent='Hibás email cím vagy jelszó!';errEl.style.display='block';}haptic('delete');}
+        if(error){
+            let msg = error.message;
+            if(msg.toLowerCase().includes('invalid login')) msg = 'Hibás email cím vagy jelszó!';
+            else if(msg.toLowerCase().includes('email not confirmed')) msg = 'Kérlek először erősítsd meg az email címedet!';
+            if(errEl){errEl.textContent=msg;errEl.style.display='block';}
+            haptic('delete');
+        }
         else { if(errEl) errEl.style.display='none'; showApp(data.user); }
     });
 
@@ -363,8 +369,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const password=document.getElementById('register-password').value;
         const errEl=document.getElementById('register-error');
         const {data,error}=await SupaDB.register(email,password,name);
-        if(error){if(errEl){errEl.textContent=error.message;errEl.style.display='block';}haptic('delete');}
-        else { if(errEl) errEl.style.display='none'; showApp(data.user); }
+        if(error){
+            let msg = error.message;
+            if(msg.toLowerCase().includes('already registered')) msg = 'Ezzel az email címmel már regisztráltak!';
+            else if(msg.toLowerCase().includes('password')) msg = 'A jelszó túl gyenge (legalább 6 karakter szükséges)!';
+            else if(msg.toLowerCase().includes('rate limit')) msg = 'Túl sok próbálkozás, kérlek próbáld újra később!';
+            if(errEl){errEl.textContent=msg;errEl.style.display='block';}
+            haptic('delete');
+        }
+        else { 
+            if(errEl) errEl.style.display='none'; 
+            if(!data.session) {
+                alert('Sikeres regisztráció! Kérlek erősítsd meg az email címed a beérkezett levélben található linkkel, majd jelentkezz be.');
+                document.getElementById('switch-to-login').click();
+            } else {
+                showApp(data.user); 
+            }
+        }
     });
 
     // Logout
