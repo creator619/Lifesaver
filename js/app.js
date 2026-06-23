@@ -370,10 +370,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const errEl=document.getElementById('register-error');
         const {data,error}=await SupaDB.register(email,password,name);
         if(error){
+            console.error("Supabase Error:", error);
             let msg = error.message;
-            if(msg.toLowerCase().includes('already registered')) msg = 'Ezzel az email címmel már regisztráltak!';
+            if (typeof msg !== 'string') msg = JSON.stringify(msg);
+            
+            if(msg === '{}' || msg === '"{}"' || !msg) msg = 'Ismeretlen hiba történt a szerverrel. Kérlek ellenőrizd, hogy az adataid helyesek-e!';
+            else if(msg.toLowerCase().includes('already registered')) msg = 'Ezzel az email címmel már regisztráltak!';
             else if(msg.toLowerCase().includes('password')) msg = 'A jelszó túl gyenge (legalább 6 karakter szükséges)!';
             else if(msg.toLowerCase().includes('rate limit')) msg = 'Túl sok próbálkozás, kérlek próbáld újra később!';
+            else if(msg.toLowerCase().includes('fetch')) msg = 'Hálózati hiba! Ellenőrizd az internetkapcsolatod.';
+            
             if(errEl){errEl.textContent=msg;errEl.style.display='block';}
             haptic('delete');
         }
