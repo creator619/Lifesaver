@@ -1,8 +1,13 @@
-const CACHE_NAME = 'lifeadmin-cache-v5';
+const CACHE_NAME = 'lifeadmin-cache-v6';
 const urlsToCache = [
   './index.html',
   './css/style.css',
-  './js/app.js'
+  './js/app.js',
+  './js/supabase.js',
+  './manifest.json',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
+  './offline.html'
 ];
 
 self.addEventListener('install', event => {
@@ -22,8 +27,28 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request)
+      .then(response => {
+        // Cache successful responses for same-origin requests
+        if (response.ok && event.request.url.startsWith(self.location.origin)) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          // For navigation requests, show offline page
+          if (event.request.mode === 'navigate') {
+            return caches.match('./offline.html');
+          }
+        });
+      })
   );
 });
 
@@ -47,8 +72,8 @@ self.addEventListener('message', event => {
     self.registration.showNotification(title, {
       body,
       tag,
-      icon: 'https://ui-avatars.com/api/?name=LA&background=111827&color=fff&size=192',
-      badge: 'https://ui-avatars.com/api/?name=LA&background=111827&color=fff&size=72',
+      icon: './icons/icon-192x192.png',
+      badge: './icons/icon-72x72.png',
       vibrate: [100, 50, 100],
       requireInteraction: false,
     });
