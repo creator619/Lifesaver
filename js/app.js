@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentUser = null;
     let dashboardData = { appointments: [], bills: [], tasks: { completed: 0, total: 0, items: [] }, shopping: [], documents: [] };
+    let isOfflineMode = !navigator.onLine;
 
     // --- UTILS ---
     function haptic(type = 'light') {
@@ -16,12 +17,87 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function setFromLoaded(loaded) {
-        dashboardData.shopping     = loaded.shopping;
-        dashboardData.appointments = loaded.appointments;
-        dashboardData.bills        = loaded.bills;
-        dashboardData.documents    = loaded.documents;
-        dashboardData.tasks.items  = loaded.tasks;
+        if (!loaded) return;
+        dashboardData.shopping     = loaded.shopping || [];
+        dashboardData.appointments = loaded.appointments || [];
+        dashboardData.bills        = loaded.bills || [];
+        dashboardData.documents    = loaded.documents || [];
+        dashboardData.tasks.items  = loaded.tasks || [];
         recalcTasks();
+    }
+
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function checkOnline() {
+        if (isOfflineMode) {
+            showToast('Offline módban ez a művelet nem elérhető!', 'warning');
+            haptic('delete');
+            return false;
+        }
+        return true;
+    }
+
+    function updateOfflineStatus() {
+        const banner = document.getElementById('offline-banner');
+        const btnAdd = document.getElementById('btn-add-new');
+        
+        if (banner) {
+            banner.style.display = isOfflineMode ? 'flex' : 'none';
+        }
+        
+        if (btnAdd) {
+            if (isOfflineMode) {
+                btnAdd.setAttribute('disabled', 'true');
+                btnAdd.style.opacity = '0.5';
+                btnAdd.style.cursor = 'not-allowed';
+            } else {
+                btnAdd.removeAttribute('disabled');
+                btnAdd.style.opacity = '1';
+                btnAdd.style.cursor = 'pointer';
+            }
+        }
+    }
+
+    async function syncData() {
+        try {
+            if (!navigator.onLine) {
+                throw new Error('Offline');
+            }
+            const loaded = await SupaDB.loadAll();
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(loaded));
+            setFromLoaded(loaded);
+            isOfflineMode = false;
+        } catch (err) {
+            console.warn("Supabase load failed, loading from cache...", err);
+            isOfflineMode = true;
+            const cached = localStorage.getItem('lifeadmin_cached_data');
+            if (cached) {
+                try {
+                    const loaded = JSON.parse(cached);
+                    setFromLoaded(loaded);
+                } catch (e) {
+                    console.error("Failed to parse cached data", e);
+                }
+            } else {
+                setFromLoaded({ shopping: [], appointments: [], bills: [], documents: [], tasks: [] });
+            }
+        }
+        updateOfflineStatus();
+        renderAll();
     }
 
     // --- GREETING ---
@@ -183,69 +259,149 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- WINDOW ACTIONS ---
     window.toggleTask = async (id) => {
+        if (!checkOnline()) {
+            renderDashboard();
+            renderTasksView();
+            return;
+        }
         const t=dashboardData.tasks.items.find(x=>x.id===id); if(!t) return;
         t.status = t.status==='completed'?'pending':'completed';
         recalcTasks(); haptic('light'); renderDashboard(); renderTasksView();
-        await SupaDB.toggleTask(id, t.status);
+        try {
+            await SupaDB.toggleTask(id, t.status);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a mentés során!', 'warning');
+        }
     };
     window.deleteTask = async (id) => {
+        if (!checkOnline()) return;
         dashboardData.tasks.items=dashboardData.tasks.items.filter(x=>x.id!==id);
         recalcTasks(); haptic('delete'); renderDashboard(); renderTasksView();
-        await SupaDB.deleteTask(id);
+        try {
+            await SupaDB.deleteTask(id);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a törlés során!', 'warning');
+        }
     };
     window.toggleShoppingItem = async (id) => {
+        if (!checkOnline()) {
+            renderShoppingView();
+            return;
+        }
         const s=dashboardData.shopping.find(x=>x.id===id); if(!s) return;
         s.bought=!s.bought; haptic('light'); renderShoppingView();
-        await SupaDB.toggleShopping(id, s.bought);
+        try {
+            await SupaDB.toggleShopping(id, s.bought);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a mentés során!', 'warning');
+        }
     };
     window.deleteShoppingItem = async (id) => {
+        if (!checkOnline()) return;
         dashboardData.shopping=dashboardData.shopping.filter(x=>x.id!==id);
         haptic('delete'); renderShoppingView();
-        await SupaDB.deleteShopping(id);
+        try {
+            await SupaDB.deleteShopping(id);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a törlés során!', 'warning');
+        }
     };
     window.markBillPaid = async (id) => {
+        if (!checkOnline()) return;
         const b=dashboardData.bills.find(x=>x.id===id); if(!b) return;
         b.type='success'; b.due='Teljesítve'; haptic('success'); renderBillsView(); renderDashboard();
-        await SupaDB.updateBill(id, {type:'success', due:'Teljesítve'});
+        try {
+            await SupaDB.updateBill(id, {type:'success', due:'Teljesítve'});
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a mentés során!', 'warning');
+        }
     };
     window.deleteDocument = async (id) => {
+        if (!checkOnline()) return;
         dashboardData.documents=dashboardData.documents.filter(x=>x.id!==id);
         haptic('delete'); renderDocumentsView();
-        await SupaDB.deleteDocument(id);
+        try {
+            await SupaDB.deleteDocument(id);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a törlés során!', 'warning');
+        }
     };
     window.deleteAppointment = async (id) => {
+        if (!checkOnline()) return;
         dashboardData.appointments=dashboardData.appointments.filter(x=>x.id!==id);
         haptic('delete'); renderCalendarView(); renderDashboard();
-        await SupaDB.deleteAppointment(id);
+        try {
+            await SupaDB.deleteAppointment(id);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a törlés során!', 'warning');
+        }
     };
 
     // --- UPLOAD ZONES ---
     function initUploadZone() {
         const z=document.getElementById('upload-zone'),f=document.getElementById('file-input'),cont=document.getElementById('upload-content');
         if(!z||!f) return;
-        z.onclick=()=>f.click();
-        f.onchange=(e)=>e.target.files.length&&animateUpload(cont,e.target.files[0].name,false);
+        z.onclick=()=> {
+            if (!checkOnline()) return;
+            f.click();
+        };
+        f.onchange=(e)=>{
+            if (!checkOnline()) return;
+            e.target.files.length&&animateUpload(cont,e.target.files[0].name,false);
+        };
         z.ondragover=(e)=>{e.preventDefault();z.classList.add('dragover');};
         z.ondragleave=()=>z.classList.remove('dragover');
-        z.ondrop=(e)=>{e.preventDefault();z.classList.remove('dragover');e.dataTransfer.files.length&&animateUpload(cont,e.dataTransfer.files[0].name,false);};
+        z.ondrop=(e)=>{
+            e.preventDefault();
+            z.classList.remove('dragover');
+            if (!checkOnline()) return;
+            e.dataTransfer.files.length&&animateUpload(cont,e.dataTransfer.files[0].name,false);
+        };
     }
     function initDocsUploadZone() {
         const z=document.getElementById('docs-upload-zone'),f=document.getElementById('docs-file-input'),cont=document.getElementById('docs-upload-content');
         if(!z||!f) return;
-        z.onclick=()=>f.click();
-        f.onchange=(e)=>e.target.files.length&&animateUpload(cont,e.target.files[0].name,true);
+        z.onclick=()=> {
+            if (!checkOnline()) return;
+            f.click();
+        };
+        f.onchange=(e)=>{
+            if (!checkOnline()) return;
+            e.target.files.length&&animateUpload(cont,e.target.files[0].name,true);
+        };
         z.ondragover=(e)=>{e.preventDefault();z.classList.add('dragover');};
         z.ondragleave=()=>z.classList.remove('dragover');
-        z.ondrop=(e)=>{e.preventDefault();z.classList.remove('dragover');e.dataTransfer.files.length&&animateUpload(cont,e.dataTransfer.files[0].name,true);};
+        z.ondrop=(e)=>{
+            e.preventDefault();
+            z.classList.remove('dragover');
+            if (!checkOnline()) return;
+            e.dataTransfer.files.length&&animateUpload(cont,e.dataTransfer.files[0].name,true);
+        };
     }
     function animateUpload(cont,fileName,saveDoc) {
+        if (!checkOnline()) return;
         cont.innerHTML=`<div class="upload-state"><div class="spinner"></div><p style="font-size:.85rem;font-weight:500;margin-top:.5rem">${saveDoc?'AI kategorizálás...':'Fájl elemzése...'}</p><p style="font-size:.7rem;color:var(--text-secondary)">${fileName}</p></div>`;
         setTimeout(async()=>{
             cont.innerHTML=`<div class="upload-state" style="color:var(--primary-color)"><i class="fa-solid fa-circle-check" style="font-size:2rem"></i><p style="font-size:.85rem;font-weight:500;margin-top:.5rem">${saveDoc?'Mentve és kategorizálva!':'Sikeres feldolgozás!'}</p><p style="font-size:.7rem;color:var(--text-secondary)">${fileName}</p></div>`;
             if(saveDoc && currentUser) {
-                const d=new Date().toLocaleDateString('hu-HU',{year:'numeric',month:'2-digit',day:'2-digit'});
-                const doc = await SupaDB.addDocument(fileName,'Egyéb',d,'1.2 MB',currentUser.id);
-                if(doc){ dashboardData.documents.unshift(doc); renderDocumentsView(); }
+                try {
+                    const d=new Date().toLocaleDateString('hu-HU',{year:'numeric',month:'2-digit',day:'2-digit'});
+                    const doc = await SupaDB.addDocument(fileName,'Egyéb',d,'1.2 MB',currentUser.id);
+                    if(doc){ 
+                        dashboardData.documents.unshift(doc); 
+                        renderDocumentsView(); 
+                        localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+                    }
+                } catch (err) {
+                    showToast('Feltöltés sikertelen!', 'warning');
+                }
             }
             setTimeout(()=>{ cont.innerHTML=saveDoc?`<i class="fa-solid fa-cloud-arrow-up"></i><p style="font-weight:500;margin-bottom:.25rem">Húzd ide az új iratot vagy kattints</p><p style="font-size:.75rem">AI automatikus kategorizálás</p>`:`<i class="fa-solid fa-cloud-arrow-up"></i><p style="font-weight:500;margin-bottom:.25rem">Húzd ide a fájlt vagy kattints</p><p style="font-size:.75rem">Automatikusan feldolgozzuk az adatokat</p>`; },3000);
         },2000);
@@ -277,44 +433,70 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(billFields) billFields.style.display=typeSelect.value==='bill'?'block':'none'; 
             if(appointmentFields) appointmentFields.style.display=typeSelect.value==='appointment'?'block':'none'; 
         };
-        btnAdd.onclick=()=>{ modal.classList.add('active'); toggleFields(); document.getElementById('item-title').focus(); };
+        btnAdd.onclick=()=>{ 
+            if (!checkOnline()) return;
+            modal.classList.add('active'); 
+            toggleFields(); 
+            document.getElementById('item-title').focus(); 
+        };
         btnClose.onclick=()=>modal.classList.remove('active');
         modal.onclick=(e)=>{ if(e.target===modal) modal.classList.remove('active'); };
         typeSelect.onchange=toggleFields;
         addForm.addEventListener('submit', async(e)=>{
             e.preventDefault();
+            if (!checkOnline()) return;
             const type=typeSelect.value, title=document.getElementById('item-title').value;
-            if(type==='task'){
-                const t=await SupaDB.addTask(title, currentUser.id);
-                if(t){ dashboardData.tasks.items.unshift(t); recalcTasks(); renderDashboard(); renderTasksView(); }
-            } else if(type==='appointment'){
-                const rawTime = document.getElementById('item-datetime')?.value;
-                let timeString = 'Hamarosan';
-                let aptType = 'neutral';
-                if (rawTime) {
-                    const d = new Date(rawTime);
-                    const now = new Date();
-                    const isMa = d.toDateString() === now.toDateString();
-                    if (isMa) {
-                        timeString = 'Ma ' + d.toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
-                        aptType = 'alert';
-                    } else {
-                        timeString = d.toLocaleString('hu-HU', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-                        if (d - now < 2*24*60*60*1000) aptType = 'warning';
+            try {
+                if(type==='task'){
+                    const t=await SupaDB.addTask(title, currentUser.id);
+                    if(t){ 
+                        dashboardData.tasks.items.unshift(t); 
+                        recalcTasks(); 
+                        renderDashboard(); 
+                        renderTasksView(); 
+                    }
+                } else if(type==='appointment'){
+                    const rawTime = document.getElementById('item-datetime')?.value;
+                    let timeString = 'Hamarosan';
+                    let aptType = 'neutral';
+                    if (rawTime) {
+                        const d = new Date(rawTime);
+                        const now = new Date();
+                        const isMa = d.toDateString() === now.toDateString();
+                        if (isMa) {
+                            timeString = 'Ma ' + d.toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
+                            aptType = 'alert';
+                        } else {
+                            timeString = d.toLocaleString('hu-HU', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                            if (d - now < 2*24*60*60*1000) aptType = 'warning';
+                        }
+                    }
+                    const a=await SupaDB.addAppointment(title,timeString,aptType,currentUser.id);
+                    if(a){ 
+                        dashboardData.appointments.unshift(a); 
+                        renderDashboard(); 
+                        renderCalendarView(); 
+                    }
+                } else if(type==='bill'){
+                    const rawAmt=document.getElementById('item-amount').value;
+                    const rawDue=document.getElementById('item-due').value;
+                    const amount=rawAmt?new Intl.NumberFormat('hu-HU').format(parseInt(rawAmt))+' Ft':'-';
+                    const due=rawDue?new Date(rawDue).toLocaleDateString('hu-HU',{month:'long',day:'numeric'}):'Nincs határidő';
+                    const isUrgent=rawDue&&(new Date(rawDue)-new Date())<3*24*60*60*1000;
+                    const b=await SupaDB.addBill(title,amount,due,isUrgent?'alert':'warning',currentUser.id);
+                    if(b){ 
+                        dashboardData.bills.unshift(b); 
+                        renderDashboard(); 
+                        renderBillsView(); 
                     }
                 }
-                const a=await SupaDB.addAppointment(title,timeString,aptType,currentUser.id);
-                if(a){ dashboardData.appointments.unshift(a); renderDashboard(); renderCalendarView(); }
-            } else if(type==='bill'){
-                const rawAmt=document.getElementById('item-amount').value;
-                const rawDue=document.getElementById('item-due').value;
-                const amount=rawAmt?new Intl.NumberFormat('hu-HU').format(parseInt(rawAmt))+' Ft':'-';
-                const due=rawDue?new Date(rawDue).toLocaleDateString('hu-HU',{month:'long',day:'numeric'}):'Nincs határidő';
-                const isUrgent=rawDue&&(new Date(rawDue)-new Date())<3*24*60*60*1000;
-                const b=await SupaDB.addBill(title,amount,due,isUrgent?'alert':'warning',currentUser.id);
-                if(b){ dashboardData.bills.unshift(b); renderDashboard(); renderBillsView(); }
+                localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+                haptic('success'); 
+                modal.classList.remove('active'); 
+                addForm.reset();
+            } catch (err) {
+                showToast('Hiba a hozzáadás során!', 'warning');
             }
-            haptic('success'); modal.classList.remove('active'); addForm.reset();
         });
     }
 
@@ -323,10 +505,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(shoppingForm){
         shoppingForm.addEventListener('submit', async(e)=>{
             e.preventDefault();
+            if (!checkOnline()) return;
             const input=document.getElementById('shopping-input');
             const val=input.value.trim(); if(!val) return;
-            const item=await SupaDB.addShopping(val, currentUser.id);
-            if(item){ dashboardData.shopping.unshift(item); renderShoppingView(); input.value=''; haptic('success'); }
+            try {
+                const item=await SupaDB.addShopping(val, currentUser.id);
+                if(item){ 
+                    dashboardData.shopping.unshift(item); 
+                    renderShoppingView(); 
+                    input.value=''; 
+                    haptic('success'); 
+                    localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+                }
+            } catch (err) {
+                showToast('Hiba a mentés során!', 'warning');
+            }
         });
     }
 
@@ -335,10 +528,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(taskForm){
         taskForm.addEventListener('submit', async(e)=>{
             e.preventDefault();
+            if (!checkOnline()) return;
             const input=document.getElementById('task-input');
             const val=input.value.trim(); if(!val) return;
-            const t=await SupaDB.addTask(val, currentUser.id);
-            if(t){ dashboardData.tasks.items.unshift(t); recalcTasks(); renderDashboard(); renderTasksView(); input.value=''; haptic('success'); }
+            try {
+                const t=await SupaDB.addTask(val, currentUser.id);
+                if(t){ 
+                    dashboardData.tasks.items.unshift(t); 
+                    recalcTasks(); 
+                    renderDashboard(); 
+                    renderTasksView(); 
+                    input.value=''; 
+                    haptic('success'); 
+                    localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+                }
+            } catch (err) {
+                showToast('Hiba a mentés során!', 'warning');
+            }
         });
     }
 
@@ -362,11 +568,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- REAL-TIME SUBSCRIPTIONS ---
     function setupRealtime() {
-        SupaDB.subscribeAll(async (table) => {
-            const loaded = await SupaDB.loadAll();
-            setFromLoaded(loaded);
-            renderAll();
-        });
+        try {
+            SupaDB.subscribeAll(async (table) => {
+                if (isOfflineMode) return;
+                const loaded = await SupaDB.loadAll();
+                localStorage.setItem('lifeadmin_cached_data', JSON.stringify(loaded));
+                setFromLoaded(loaded);
+                renderAll();
+            });
+        } catch (err) {
+            console.warn("Real-time subscription setup failed (expected if offline)", err);
+        }
     }
 
     // --- AUTH UI ---
@@ -375,6 +587,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function showApp(user) {
         currentUser = user;
+        localStorage.setItem('lifeadmin_cached_user', JSON.stringify(user));
+        
         const name = user.user_metadata?.full_name || user.email.split('@')[0];
         const fCode = user.user_metadata?.family_code || 'N/A';
         const ne=document.getElementById('user-name-sidebar'), ee=document.getElementById('user-email-sidebar'), ae=document.getElementById('user-avatar-sidebar'), fe=document.getElementById('user-family-code-sidebar');
@@ -383,15 +597,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(ae) ae.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f3f4f6&color=111827`;
         if(authContainer) authContainer.style.display='none';
         if(appContainer) appContainer.style.display='flex';
-        const loaded = await SupaDB.loadAll();
-        setFromLoaded(loaded);
-        renderAll();
+        
+        await syncData();
+        
         initDocsUploadZone();
         setupRealtime();
     }
 
     function showAuth() {
         currentUser=null;
+        localStorage.removeItem('lifeadmin_cached_user');
+        localStorage.removeItem('lifeadmin_cached_data');
         if(authContainer) authContainer.style.display='flex';
         if(appContainer) appContainer.style.display='none';
     }
@@ -458,8 +674,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-logout')?.addEventListener('click',doLogout);
     document.getElementById('btn-logout-mobile')?.addEventListener('click',doLogout);
 
+    // --- ONLINE/OFFLINE EVENT LISTENERS ---
+    window.addEventListener('online', () => {
+        isOfflineMode = false;
+        showToast('Online mód. Kapcsolat helyreállítva!', 'success');
+        syncData();
+    });
+
+    window.addEventListener('offline', () => {
+        isOfflineMode = true;
+        showToast('Offline mód. Az adatok csak olvashatóak.', 'warning');
+        updateOfflineStatus();
+    });
+
     // --- INIT: check existing session ---
-    const session = await SupaDB.getSession();
-    if(session?.user) { showApp(session.user); }
-    else { showAuth(); }
+    let session = null;
+    try {
+        session = await SupaDB.getSession();
+    } catch (err) {
+        console.warn("Could not get session from Supabase, checking cache", err);
+    }
+    
+    if(session?.user) { 
+        showApp(session.user); 
+    } else { 
+        const cachedUser = localStorage.getItem('lifeadmin_cached_user');
+        if (cachedUser) {
+            try {
+                showApp(JSON.parse(cachedUser));
+            } catch (e) {
+                showAuth();
+            }
+        } else {
+            showAuth();
+        }
+    }
 });

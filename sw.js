@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lifeadmin-cache-v6';
+const CACHE_NAME = 'lifeadmin-cache-v7';
 const urlsToCache = [
   './index.html',
   './css/style.css',
@@ -43,9 +43,9 @@ self.addEventListener('fetch', event => {
       .catch(() => {
         return caches.match(event.request).then(cached => {
           if (cached) return cached;
-          // For navigation requests, show offline page
+          // For navigation requests, load the cached index.html so the app shell boots offline
           if (event.request.mode === 'navigate') {
-            return caches.match('./offline.html');
+            return caches.match('./index.html');
           }
         });
       })
