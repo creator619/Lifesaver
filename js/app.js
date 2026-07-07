@@ -228,9 +228,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const info=parseBillTitle(b.title);
             return`
         <div class="appointment-card" style="${p?'opacity:.6':''}">
-            <div class="appointment-date" style="background:${p?'#f0fdf4':'var(--bg-main)'};border-color:${p?'#bbf7d0':'var(--border-color)'}"><i class="fa-solid ${p?'fa-check':info.icon}" style="font-size:1.4rem;color:${p?'#16a34a':info.color}"></i></div>
-            <div class="appointment-details"><h3 style="text-decoration:${p?'line-through':'none'}">${info.cleanTitle}</h3><p style="color:${b.type==='alert'?'#991b1b':'var(--text-secondary)'};font-weight:500"><span style="color: ${info.color}; font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">${info.category}</span> &bull; ${b.amount} &bull; ${b.due}</p></div>
-            <div class="card-action">${!p?`<button class="btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer;font-weight:500;color:var(--text-primary)" onclick="window.markBillPaid('${b.id}')"><i class="fa-solid fa-check" style="color:#16a34a"></i> Fizetve</button>`:'<span class="tag tag-success">Teljesítve</span>'}</div>
+            <div class="appointment-date" style="background:${p?'var(--bill-paid-bg)':'var(--bg-main)'};border-color:${p?'var(--bill-paid-border)':'var(--border-color)'}"><i class="fa-solid ${p?'fa-check':info.icon}" style="font-size:1.4rem;color:${p?'#16a34a':info.color}"></i></div>
+            <div class="appointment-details"><h3 style="text-decoration:${p?'line-through':'none'}">${info.cleanTitle}</h3><p style="color:${b.type==='alert'?'var(--bill-alert-color)':'var(--text-secondary)'};font-weight:500"><span style="color: ${info.color}; font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">${info.category}</span> &bull; ${b.amount} &bull; ${b.due}</p></div>
+            <div class="card-action" style="display:flex;gap:0.4rem;align-items:center">${!p?`<button class="btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer;font-weight:500;color:var(--text-primary)" onclick="window.markBillPaid('${b.id}')"><i class="fa-solid fa-check" style="color:#16a34a"></i> Fizetve</button>`:'<span class="tag tag-success">Teljesítve</span>'}<button class="btn-danger-ghost" onclick="window.deleteBill('${b.id}')"><i class="fa-regular fa-trash-can"></i></button></div>
         </div>`;}).join('')}</div>`;
     }
 
@@ -295,11 +295,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             let priorityBadge = '';
             if (info.priority === 'Magas') {
-                priorityBadge = `<span style="background:#fee2e2;color:#ef4444;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:0.5rem;display:inline-block;vertical-align:middle;">Magas</span>`;
+                priorityBadge = `<span class="priority-badge priority-high">Magas</span>`;
             } else if (info.priority === 'Közepes') {
-                priorityBadge = `<span style="background:#fef3c7;color:#d97706;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:0.5rem;display:inline-block;vertical-align:middle;">Közepes</span>`;
+                priorityBadge = `<span class="priority-badge priority-mid">Közepes</span>`;
             } else if (info.priority === 'Alacsony') {
-                priorityBadge = `<span style="background:#f3f4f6;color:#6b7280;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:0.5rem;display:inline-block;vertical-align:middle;">Alacsony</span>`;
+                priorityBadge = `<span class="priority-badge priority-low">Alacsony</span>`;
             }
             
             let dueText = '';
@@ -400,6 +400,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
         } catch (err) {
             showToast('Hiba a mentés során!', 'warning');
+        }
+    };
+    window.deleteBill = async (id) => {
+        if (!checkOnline()) return;
+        dashboardData.bills=dashboardData.bills.filter(x=>x.id!==id);
+        haptic('delete'); renderBillsView(); renderDashboard();
+        try {
+            await SupaDB.deleteBill(id);
+            localStorage.setItem('lifeadmin_cached_data', JSON.stringify(dashboardData));
+        } catch (err) {
+            showToast('Hiba a törlés során!', 'warning');
         }
     };
     window.deleteDocument = async (id) => {
@@ -795,16 +806,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const themeToggleSidebarBtn = document.getElementById('btn-theme-sidebar');
     
     function setTheme(theme) {
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
         if (theme === 'dark') {
             document.documentElement.classList.add('dark-theme');
             localStorage.setItem('lifeadmin_theme', 'dark');
             if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
             if (themeToggleSidebarBtn) themeToggleSidebarBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
+            if (metaTheme) metaTheme.setAttribute('content', '#0f172a');
         } else {
             document.documentElement.classList.remove('dark-theme');
             localStorage.setItem('lifeadmin_theme', 'light');
             if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
             if (themeToggleSidebarBtn) themeToggleSidebarBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
+            if (metaTheme) metaTheme.setAttribute('content', '#ffffff');
         }
     }
     

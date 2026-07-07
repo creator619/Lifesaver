@@ -12,6 +12,11 @@
     --primary-hover: #1e293b;
     --primary-text: #ffffff;
     
+    /* Semantic semantic colors */
+    --bill-paid-bg: #f0fdf4;
+    --bill-paid-border: #bbf7d0;
+    --bill-alert-color: #991b1b;
+    
     --radius-lg: 12px;
     --radius-md: 8px;
     --radius-sm: 6px;
@@ -30,6 +35,11 @@
     --primary-color: #38bdf8; /* sky-400 */
     --primary-hover: #7dd3fc;
     --primary-text: #0f172a; /* slate-900 (dark text on light blue primary) */
+    
+    /* Semantic colors - dark mode overrides */
+    --bill-paid-bg: #052e16;
+    --bill-paid-border: #166534;
+    --bill-alert-color: #fca5a5;
 }
 
 .dark-theme .auth-container {
@@ -997,4 +1007,45 @@ body {
 
 #btn-copy-code:hover {
     color: var(--primary-color) !important;
+}
+
+/* --- Priority Badges --- */
+.priority-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.priority-high {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.priority-mid {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.priority-low {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.dark-theme .priority-high {
+    background: rgba(220, 38, 38, 0.2);
+    color: #fca5a5;
+}
+
+.dark-theme .priority-mid {
+    background: rgba(217, 119, 6, 0.2);
+    color: #fcd34d;
+}
+
+.dark-theme .priority-low {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
 }

@@ -61,6 +61,7 @@ window.SupaDB = {
     // --- BILLS ---
     async addBill(title, amount, due, type, uid) { const { data } = await _db.from('bills').insert({ title, amount, due, type, created_by: uid }).select().single(); return data; },
     async updateBill(id, updates)       { await _db.from('bills').update(updates).eq('id', id); },
+    async deleteBill(id)                { await _db.from('bills').delete().eq('id', id); },
 
     // --- DOCUMENTS ---
     async addDocument(name, folder, date, size, uid) { const { data } = await _db.from('documents').insert({ name, folder, date, size, created_by: uid }).select().single(); return data; },
