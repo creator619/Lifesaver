@@ -299,6 +299,16 @@
                     <!-- Extra fields for bills only -->
                     <div id="bill-fields" style="display: none;">
                         <div class="form-group">
+                            <label>Kategória</label>
+                            <select id="bill-category" class="form-control">
+                                <option value="Rezsi">Rezsi</option>
+                                <option value="Előfizetés">Előfizetés</option>
+                                <option value="Hitel">Hitel</option>
+                                <option value="Élelmiszer">Élelmiszer</option>
+                                <option value="Egyéb" selected>Egyéb</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Összeg (Ft)</label>
                             <input type="number" id="item-amount" class="form-control" placeholder="pl. 12450">
                         </div>

@@ -130,7 +130,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header"><div class="card-title">Fizetendő Számlák</div></div>
             <div class="card-body">
             ${dashboardData.bills.length===0?'<p style="color:var(--text-secondary);font-size:.9rem;">Nincs aktív számla.</p>':
-            dashboardData.bills.map(b=>`<div class="list-item"><div class="item-info"><span class="item-title">${b.title}</span><span class="item-desc">${b.amount}</span></div><span class="tag tag-${b.type}">${b.due}</span></div>`).join('')}
+            dashboardData.bills.map(b=>{
+                const info=parseBillTitle(b.title);
+                return `<div class="list-item"><div class="item-info"><span class="item-title">${info.cleanTitle}</span><span class="item-desc"><span style="color:${info.color};font-weight:600;font-size:0.7rem;text-transform:uppercase;">${info.category}</span> &bull; ${b.amount}</span></div><span class="tag tag-${b.type}">${b.due}</span></div>`;
+            }).join('')}
             </div>
         </div>
         <div class="card">
@@ -151,6 +154,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         </div>`;
         initUploadZone();
+    }
+
+    // --- PARSE BILL TITLE HELPER ---
+    function parseBillTitle(title) {
+        const categories = {
+            'Rezsi': { icon: 'fa-bolt', color: '#f59e0b' },
+            'Előfizetés': { icon: 'fa-repeat', color: '#3b82f6' },
+            'Hitel': { icon: 'fa-building-columns', color: '#8b5cf6' },
+            'Élelmiszer': { icon: 'fa-cart-shopping', color: '#10b981' },
+            'Egyéb': { icon: 'fa-file-invoice-dollar', color: '#6b7280' }
+        };
+        
+        for (const catName in categories) {
+            if (title.startsWith(catName + ': ')) {
+                return {
+                    category: catName,
+                    cleanTitle: title.slice(catName.length + 2),
+                    icon: categories[catName].icon,
+                    color: categories[catName].color
+                };
+            }
+        }
+        
+        return {
+            category: 'Egyéb',
+            cleanTitle: title,
+            icon: categories['Egyéb'].icon,
+            color: categories['Egyéb'].color
+        };
     }
 
     // --- RENDER CALENDAR ---
@@ -174,11 +206,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(de) de.textContent=new Intl.NumberFormat('hu-HU').format(due)+' Ft';
         if(pe) pe.textContent=new Intl.NumberFormat('hu-HU').format(paid)+' Ft';
         if(!dashboardData.bills.length){c.innerHTML=`<div class="card"><div class="card-body" style="text-align:center;color:var(--text-secondary);padding:2rem">Nincsenek számlák.</div></div>`;return;}
-        c.innerHTML=`<div class="appointment-list">${dashboardData.bills.map(b=>{const p=b.type==='success';return`
+        c.innerHTML=`<div class="appointment-list">${dashboardData.bills.map(b=>{
+            const p=b.type==='success';
+            const info=parseBillTitle(b.title);
+            return`
         <div class="appointment-card" style="${p?'opacity:.6':''}">
-            <div class="appointment-date" style="background:${p?'#f0fdf4':'var(--bg-main)'};border-color:${p?'#bbf7d0':'var(--border-color)'}"><i class="fa-solid fa-file-invoice-dollar" style="font-size:1.5rem;color:${p?'#16a34a':'var(--text-secondary)'}"></i></div>
-            <div class="appointment-details"><h3 style="text-decoration:${p?'line-through':'none'}">${b.title}</h3><p style="color:${b.type==='alert'?'#991b1b':'var(--text-secondary)'};font-weight:500">${b.amount} &bull; ${b.due}</p></div>
-            <div class="card-action">${!p?`<button class="btn-sm" style="background:#fff;border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer;font-weight:500" onclick="window.markBillPaid('${b.id}')"><i class="fa-solid fa-check" style="color:#16a34a"></i> Fizetve</button>`:'<span class="tag tag-success">Teljesítve</span>'}</div>
+            <div class="appointment-date" style="background:${p?'#f0fdf4':'var(--bg-main)'};border-color:${p?'#bbf7d0':'var(--border-color)'}"><i class="fa-solid ${p?'fa-check':info.icon}" style="font-size:1.4rem;color:${p?'#16a34a':info.color}"></i></div>
+            <div class="appointment-details"><h3 style="text-decoration:${p?'line-through':'none'}">${info.cleanTitle}</h3><p style="color:${b.type==='alert'?'#991b1b':'var(--text-secondary)'};font-weight:500"><span style="color: ${info.color}; font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">${info.category}</span> &bull; ${b.amount} &bull; ${b.due}</p></div>
+            <div class="card-action">${!p?`<button class="btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer;font-weight:500;color:var(--text-primary)" onclick="window.markBillPaid('${b.id}')"><i class="fa-solid fa-check" style="color:#16a34a"></i> Fizetve</button>`:'<span class="tag tag-success">Teljesítve</span>'}</div>
         </div>`;}).join('')}</div>`;
     }
 
@@ -480,10 +515,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if(type==='bill'){
                     const rawAmt=document.getElementById('item-amount').value;
                     const rawDue=document.getElementById('item-due').value;
+                    const catSelect=document.getElementById('bill-category');
+                    const category=catSelect ? catSelect.value : 'Egyéb';
                     const amount=rawAmt?new Intl.NumberFormat('hu-HU').format(parseInt(rawAmt))+' Ft':'-';
                     const due=rawDue?new Date(rawDue).toLocaleDateString('hu-HU',{month:'long',day:'numeric'}):'Nincs határidő';
                     const isUrgent=rawDue&&(new Date(rawDue)-new Date())<3*24*60*60*1000;
-                    const b=await SupaDB.addBill(title,amount,due,isUrgent?'alert':'warning',currentUser.id);
+                    const titleWithCategory = `${category}: ${title}`;
+                    const b=await SupaDB.addBill(titleWithCategory,amount,due,isUrgent?'alert':'warning',currentUser.id);
                     if(b){ 
                         dashboardData.bills.unshift(b); 
                         renderDashboard(); 
