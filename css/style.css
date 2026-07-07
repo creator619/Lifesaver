@@ -10,10 +10,30 @@
     
     --primary-color: #0f172a; /* Slate 900 for buttons/accents */
     --primary-hover: #1e293b;
+    --primary-text: #ffffff;
     
     --radius-lg: 12px;
     --radius-md: 8px;
     --radius-sm: 6px;
+}
+
+.dark-theme {
+    --bg-main: #0f172a; /* slate-900 */
+    --bg-card: #1e293b; /* slate-800 */
+    --bg-sidebar: #1e293b; /* slate-800 */
+    
+    --border-color: #334155; /* slate-700 */
+    
+    --text-primary: #f8fafc; /* slate-50 */
+    --text-secondary: #94a3b8; /* slate-400 */
+    
+    --primary-color: #38bdf8; /* sky-400 */
+    --primary-hover: #7dd3fc;
+    --primary-text: #0f172a; /* slate-900 (dark text on light blue primary) */
+}
+
+.dark-theme .auth-container {
+    background: radial-gradient(circle at 10% 20%, #1e293b 0%, #0f172a 90%);
 }
 
 * {
@@ -60,7 +80,7 @@ body {
     width: 28px;
     height: 28px;
     background: var(--primary-color);
-    color: white;
+    color: var(--primary-text);
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -197,7 +217,7 @@ body {
 
 .btn-primary {
     background: var(--primary-color);
-    color: white;
+    color: var(--primary-text);
     border: none;
     padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
@@ -878,7 +898,7 @@ body {
     height: 32px;
     font-size: 0.95rem;
     background: var(--primary-color);
-    color: white;
+    color: var(--primary-text);
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;

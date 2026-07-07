@@ -687,6 +687,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateOfflineStatus();
     });
 
+    // --- THEME ---
+    const themeToggleBtn = document.getElementById('btn-theme');
+    const themeToggleSidebarBtn = document.getElementById('btn-theme-sidebar');
+    
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark-theme');
+            localStorage.setItem('lifeadmin_theme', 'dark');
+            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
+            if (themeToggleSidebarBtn) themeToggleSidebarBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
+        } else {
+            document.documentElement.classList.remove('dark-theme');
+            localStorage.setItem('lifeadmin_theme', 'light');
+            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
+            if (themeToggleSidebarBtn) themeToggleSidebarBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
+        }
+    }
+    
+    const toggleTheme = () => {
+        const currentTheme = localStorage.getItem('lifeadmin_theme') || 'light';
+        setTheme(currentTheme === 'light' ? 'dark' : 'light');
+        haptic('light');
+    };
+    
+    if (themeToggleBtn) themeToggleBtn.onclick = toggleTheme;
+    if (themeToggleSidebarBtn) themeToggleSidebarBtn.onclick = toggleTheme;
+    
+    // Initialize theme
+    const savedTheme = localStorage.getItem('lifeadmin_theme') || 'light';
+    setTheme(savedTheme);
+
     // --- INIT: check existing session ---
     let session = null;
     try {
