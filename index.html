@@ -289,6 +289,21 @@
                         <label>Megnevezés</label>
                         <input type="text" id="item-title" class="form-control" placeholder="pl. Kutyatáp vásárlása" required>
                     </div>
+                    <!-- Extra fields for tasks only -->
+                    <div id="task-fields">
+                        <div class="form-group">
+                            <label>Prioritás</label>
+                            <select id="task-priority" class="form-control">
+                                <option value="Magas">Magas</option>
+                                <option value="Közepes" selected>Közepes</option>
+                                <option value="Alacsony">Alacsony</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Határidő (opcionális)</label>
+                            <input type="date" id="task-due" class="form-control">
+                        </div>
+                    </div>
                     <!-- Extra fields for appointments only -->
                     <div id="appointment-fields" style="display: none;">
                         <div class="form-group">

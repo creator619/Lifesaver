@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="progress-header"><span>Folyamatban</span><span>${dashboardData.tasks.completed}/${dashboardData.tasks.total} kész</span></div>
                 <div class="progress-container"><div class="progress-bar" style="width:${taskPct}%"></div></div>
                 <div style="margin-top:1rem;display:flex;flex-direction:column;gap:.6rem;">
-                ${dashboardData.tasks.items.map(t=>`<label class="checkbox-label ${t.status==='completed'?'completed-task':''}"><input type="checkbox" onchange="window.toggleTask('${t.id}')" ${t.status==='completed'?'checked':''}><span style="flex:1">${t.title}</span></label>`).join('')}
+                ${dashboardData.tasks.items.map(t=>{const ti=parseTaskTitle(t.title);return`<label class="checkbox-label ${t.status==='completed'?'completed-task':''}"><input type="checkbox" onchange="window.toggleTask('${t.id}')" ${t.status==='completed'?'checked':''}><span style="flex:1">${ti.cleanTitle}</span></label>`;}).join('')}
                 </div>
             </div>
         </div>
@@ -154,6 +154,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         </div>`;
         initUploadZone();
+    }
+
+    // --- PARSE TASK TITLE HELPER ---
+    function parseTaskTitle(title) {
+        const match = title.match(/^\[(Magas|Közepes|Alacsony)?\]\[([^\]]*)\]\s*(.*)$/);
+        if (match) {
+            return {
+                priority: match[1] || 'Közepes',
+                dueDate: match[2] || '',
+                cleanTitle: match[3]
+            };
+        }
+        return {
+            priority: 'Közepes',
+            dueDate: '',
+            cleanTitle: title
+        };
     }
 
     // --- PARSE BILL TITLE HELPER ---
@@ -273,8 +290,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(!dashboardData.tasks.items.length){c.innerHTML=`<div style="text-align:center;color:var(--text-secondary);padding:2rem">Nincsenek feladatok.</div>`;return;}
         const pen=[],done=[];
         dashboardData.tasks.items.forEach(t=>{
-            const h=`<div class="shopping-item" style="padding:1rem 1.25rem"><label class="checkbox-label ${t.status==='completed'?'completed-task':''}" style="margin:0;cursor:pointer;width:100%"><input type="checkbox" onchange="window.toggleTask('${t.id}')" ${t.status==='completed'?'checked':''}><span style="flex:1">${t.title}</span></label><button class="btn-danger-ghost" onclick="window.deleteTask('${t.id}')"><i class="fa-regular fa-trash-can"></i></button></div>`;
-            t.status==='completed'?done.push(h):pen.push(h);
+            const info = parseTaskTitle(t.title);
+            const isDone = t.status==='completed';
+            
+            let priorityBadge = '';
+            if (info.priority === 'Magas') {
+                priorityBadge = `<span style="background:#fee2e2;color:#ef4444;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:0.5rem;display:inline-block;vertical-align:middle;">Magas</span>`;
+            } else if (info.priority === 'Közepes') {
+                priorityBadge = `<span style="background:#fef3c7;color:#d97706;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:0.5rem;display:inline-block;vertical-align:middle;">Közepes</span>`;
+            } else if (info.priority === 'Alacsony') {
+                priorityBadge = `<span style="background:#f3f4f6;color:#6b7280;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:0.5rem;display:inline-block;vertical-align:middle;">Alacsony</span>`;
+            }
+            
+            let dueText = '';
+            if (info.dueDate) {
+                const formattedDate = new Date(info.dueDate).toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
+                dueText = `<span style="font-size:0.75rem;color:var(--text-secondary);margin-left:0.5rem;display:inline-flex;align-items:center;gap:0.25rem;vertical-align:middle;"><i class="fa-regular fa-calendar"></i> ${formattedDate}</span>`;
+            }
+
+            const h=`
+            <div class="shopping-item" style="padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+                <label class="checkbox-label ${isDone?'completed-task':''}" style="margin:0;cursor:pointer;flex:1;display:flex;align-items:center;width:calc(100% - 40px);">
+                    <input type="checkbox" onchange="window.toggleTask('${t.id}')" ${isDone?'checked':''}>
+                    <span style="flex:1;display:flex;align-items:center;flex-wrap:wrap;gap:0.25rem;">
+                        ${!isDone ? priorityBadge : ''}
+                        <span style="text-decoration:${isDone?'line-through':'none'};vertical-align:middle;">${info.cleanTitle}</span>
+                        ${!isDone ? dueText : ''}
+                    </span>
+                </label>
+                <button class="btn-danger-ghost" onclick="window.deleteTask('${t.id}')"><i class="fa-regular fa-trash-can"></i></button>
+            </div>`;
+            isDone?done.push(h):pen.push(h);
         });
         c.innerHTML=(pen.length?`<h4 style="padding:1.25rem 1.25rem .5rem;color:var(--text-secondary);font-size:.85rem;text-transform:uppercase">Folyamatban</h4>`+pen.join(''):'')+(done.length?`<h4 style="padding:1.25rem 1.25rem .5rem;color:var(--text-secondary);font-size:.85rem;text-transform:uppercase">Kész</h4>`+done.join(''):'');
     }
@@ -462,9 +508,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const addForm=document.getElementById('add-item-form');
     if(btnAdd&&modal){
         const typeSelect=document.getElementById('item-type');
+        const taskFields=document.getElementById('task-fields');
         const billFields=document.getElementById('bill-fields');
         const appointmentFields=document.getElementById('appointment-fields');
         const toggleFields=()=>{ 
+            if(taskFields) taskFields.style.display=typeSelect.value==='task'?'block':'none'; 
             if(billFields) billFields.style.display=typeSelect.value==='bill'?'block':'none'; 
             if(appointmentFields) appointmentFields.style.display=typeSelect.value==='appointment'?'block':'none'; 
         };
@@ -483,7 +531,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const type=typeSelect.value, title=document.getElementById('item-title').value;
             try {
                 if(type==='task'){
-                    const t=await SupaDB.addTask(title, currentUser.id);
+                    const prioritySelect = document.getElementById('task-priority');
+                    const priority = prioritySelect ? prioritySelect.value : 'Közepes';
+                    const rawDue = document.getElementById('task-due')?.value || '';
+                    const titleWithMeta = `[${priority}][${rawDue}] ${title}`;
+                    const t=await SupaDB.addTask(titleWithMeta, currentUser.id);
                     if(t){ 
                         dashboardData.tasks.items.unshift(t); 
                         recalcTasks(); 
