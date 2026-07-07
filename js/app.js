@@ -590,13 +590,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('lifeadmin_cached_user', JSON.stringify(user));
         
         const name = user.user_metadata?.full_name || user.email.split('@')[0];
-        const fCode = user.user_metadata?.family_code || 'N/A';
+        const fCode = user.user_metadata?.family_code || '';
         const ne=document.getElementById('user-name-sidebar'), ee=document.getElementById('user-email-sidebar'), ae=document.getElementById('user-avatar-sidebar'), fe=document.getElementById('user-family-code-sidebar');
         if(ne) ne.textContent=name; if(ee) ee.textContent=user.email;
-        if(fe) fe.textContent=`CSALÁD KÓD: ${fCode}`;
+        if(fe) fe.textContent=`KÓD: ${fCode || 'N/A'}`;
         if(ae) ae.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f3f4f6&color=111827`;
         if(authContainer) authContainer.style.display='none';
         if(appContainer) appContainer.style.display='flex';
+        
+        const copyBtn = document.getElementById('btn-copy-code');
+        if (copyBtn && fCode) {
+            copyBtn.style.display = 'inline-flex';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(fCode).then(() => {
+                    showToast('Családi kód kimásolva a vágólapra!', 'success');
+                    haptic('success');
+                }).catch(() => {
+                    showToast('Nem sikerült kimásolni a kódot!', 'warning');
+                });
+            };
+        }
         
         await syncData();
         

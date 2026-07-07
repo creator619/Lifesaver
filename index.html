@@ -117,7 +117,10 @@
                     <div class="user-info">
                         <span class="name" id="user-name-sidebar">Simone</span>
                         <span class="email" id="user-email-sidebar">simone@example.com</span>
-                        <span class="email" id="user-family-code-sidebar" style="font-size: 0.7rem; font-weight: 700; color: var(--primary-color); margin-top: 2px;">KÓD: ------</span>
+                        <div style="display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;">
+                            <span class="email" id="user-family-code-sidebar" style="font-size: 0.7rem; font-weight: 700; color: var(--primary-color); margin-top: 0;">KÓD: ------</span>
+                            <button id="btn-copy-code" title="Kód másolása" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; padding: 2px; transition: color 0.15s ease; display: none; align-items: center; justify-content: center; height: 14px; width: 14px;"><i class="fa-regular fa-copy"></i></button>
+                        </div>
                     </div>
                 </div>
                 <div style="display: flex; gap: 0.25rem;">

@@ -994,3 +994,7 @@ body {
         justify-content: center;
     }
 }
+
+#btn-copy-code:hover {
+    color: var(--primary-color) !important;
+}
